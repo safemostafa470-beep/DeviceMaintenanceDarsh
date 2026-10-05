@@ -103,7 +103,6 @@
         .print-btn { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; }
         .print-btn:hover { background: var(--warning); color: white; }
 
-        /* شاشة التقارير الشاملة */
         .report-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .stat-card { background: rgba(10, 15, 29, 0.65); border: 1px solid var(--glass-border); padding: 16px; border-radius: 16px; text-align: center; }
         .stat-card .val { font-size: 1.5rem; font-weight: 900; margin-top: 4px; }
@@ -114,7 +113,6 @@
         .filter-item label { font-size: 0.78rem; color: var(--text-sub); font-weight: 700; }
         .filter-item input, .filter-item select { padding: 9px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--glass-border); color: #fff; outline: none; font-size: 0.85rem; }
 
-        /* صندوق المحادثة للشات */
         .chat-container-card { background: rgba(15, 23, 42, 0.98); border: 1px solid var(--primary); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .chat-msgs { height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(10, 15, 29, 0.6); border-radius: 14px; margin-bottom: 12px; }
         .chat-msg-item { padding: 9px 13px; border-radius: 12px; max-width: 80%; line-height: 1.4; font-size: 0.85rem; }
@@ -122,7 +120,6 @@
         .chat-msg-client { background: rgba(56, 189, 248, 0.2); align-self: flex-start; color: #bae6fd; text-align: right; border: 1px solid rgba(56, 189, 248, 0.3); }
         .chat-img-thumb { max-width: 180px; max-height: 180px; border-radius: 10px; margin-top: 5px; cursor: pointer; }
 
-        /* شاشة الاتصال */
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 11, 20, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
         .call-avatar { width: 110px; height: 110px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 20px; }
@@ -136,7 +133,6 @@
         .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .lightbox-modal img { max-width: 90%; max-height: 80%; border-radius: 12px; }
 
-        /* نافذة التنبيه الاحترافية VIP Modal */
         .vip-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
@@ -152,7 +148,6 @@
         .vip-modal-msg { font-size: 0.95rem; color: #cbd5e1; margin-bottom: 20px; line-height: 1.6; word-break: break-word; }
         .vip-modal-btn { background: var(--accent-gradient); color: #070b14; border: none; padding: 10px 30px; border-radius: 12px; font-weight: 900; font-size: 0.95rem; cursor: pointer; }
 
-        /* تخصيص الطباعة الورقية والحرارية */
         @media print {
             body { background: white !important; color: black !important; padding: 0 !important; }
             body * { visibility: hidden; }
@@ -241,7 +236,8 @@
 
     <div id="callScreen" class="call-screen-overlay">
         <div class="call-avatar">👤</div>
-        <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 8px;" id="callTargetName">العميل</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 5px;" id="callTargetName">العميل</div>
+        <div style="font-size: 1.4rem; color: #10b981; font-weight: 900; font-family: monospace; margin-bottom: 10px; display:none;" id="callTimerDisplay">00:00</div>
         <div style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 35px;" id="callStatusText">جاري الرنين...</div>
         <div class="call-actions">
             <button class="btn-call-action btn-mute-call" id="btnMuteCall" onclick="toggleMute()" title="كتم المايك">🎤</button>
@@ -439,9 +435,28 @@
         let currentCall = null;
         let localStream = null;
         let isMuted = false;
+        
+        let callTimerInterval = null;
+        let callSeconds = 0;
 
         let audioCtx = null;
         let ringInterval = null;
+
+        // دالة تنسيق الوقت بناءً على طلبك (مثال: AM-2:45 2026-10-07)
+        function formatSimpleDate(isoString) {
+            if(!isoString) return '-';
+            let d = new Date(isoString);
+            if(isNaN(d)) return isoString;
+            let hours = d.getHours();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            let mins = String(d.getMinutes()).padStart(2, '0');
+            let year = d.getFullYear();
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            return `${ampm}-${hours}:${mins} &nbsp;&nbsp; ${year}-${month}-${day}`;
+        }
 
         function showVipModal(title, msg, icon = '✅') {
             document.getElementById('vipModalTitle').innerText = title;
@@ -471,12 +486,9 @@
             } catch(e) {}
         }
 
-        // نغمة تنبيه رسائل مزدوجة واضحة ومريحة مرتين
         function playMessagePing() {
             playTone(850, 1150, 0.12);
-            setTimeout(() => {
-                playTone(1050, 1400, 0.15);
-            }, 140);
+            setTimeout(() => playTone(1050, 1400, 0.15), 140);
         }
 
         function startIncomingRingtone() {
@@ -572,7 +584,6 @@
             attachTechRealtimeListener();
         });
 
-        // جلب البيانات الأولية
         async function fetchDevicesInitial() {
             let { data } = await _supabase.from('devices').select('*').eq('technician', currentTech).order('id', { ascending: false });
             if(data) {
@@ -581,7 +592,6 @@
             }
         }
 
-        // تفعيل الاستماع الحي اللحظي (Realtime) لكل أجهزة الفني
         function attachTechRealtimeListener() {
             if(realtimeSubscription) _supabase.removeChannel(realtimeSubscription);
 
@@ -595,7 +605,6 @@
                     let changed = payload.new;
                     let oldItem = devices.find(x => String(x.id) === String(changed.id));
 
-                    // التحقق من وجود رسائل جديدة من العميل للتنبيه بالصوت والديسكتوب
                     if (oldItem && (changed.chat || []).length > (oldItem.chat || []).length) {
                         let lastMsg = changed.chat[changed.chat.length - 1];
                         if (lastMsg.sender === 'client') {
@@ -604,7 +613,6 @@
                         }
                     }
 
-                    // تحديث المصفوفة المحلية فوراً
                     let idx = devices.findIndex(x => String(x.id) === String(changed.id));
                     if(idx !== -1) {
                         devices[idx] = changed;
@@ -614,7 +622,6 @@
 
                     refreshActiveView();
 
-                    // إذا كان الشات مفتوحاً لهذا الجهاز، يتم تحديث الرسائل لحظياً
                     if(activeChatId && String(activeChatId) === String(changed.id)) {
                         renderChatMsgs(changed.chat || []);
                     }
@@ -697,7 +704,7 @@
                 let unread = (d.chat || []).some(m => m.sender === 'client' && !m.readByTech);
                 let dateFormatted = d.created_at ? d.created_at.slice(0,10) : '-';
 
-                let statusCell = '', timeCell = '', faultCell = '', costCell = '';
+                let statusCell = '', timeCell = '', faultCell = '', costCell = '', chatBtn = '';
 
                 if (isReadOnly) {
                     let badgeClass = 'badge-inspect';
@@ -706,9 +713,11 @@
                     else if (d.status.includes('بانتظار')) badgeClass = 'badge-waiting';
 
                     statusCell = `<span class="badge ${badgeClass}">${d.status}</span>`;
-                    timeCell = `<span style="color:var(--text-sub); font-size:0.75rem;">${d.expected_time ? d.expected_time.replace('T', ' ') : '-'}</span>`;
+                    timeCell = `<span style="color:var(--text-sub); font-size:0.75rem; direction:ltr; display:inline-block; font-weight:bold;">${formatSimpleDate(d.expected_time)}</span>`;
                     faultCell = `<span style="color:#fbbf24; font-weight:700; font-size:0.82rem;">${d.new_fault ? d.new_fault : '-'}</span>`;
                     costCell = `<b style="color:#34d399; font-size:0.9rem;">${d.cost || 0} ${curConf.currency}</b>`;
+                    // منع فتح الشات للأجهزة المنتهية أو المسترجعة
+                    chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز تم تسليمه أو استرجاعه.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#070b14; color:#fff; border:1px solid var(--glass-border); padding:6px 8px; border-radius:10px; font-size:0.75rem; cursor:pointer; font-weight:700;">
@@ -728,6 +737,7 @@
                         </div>
                     `;
                     costCell = `<input type="text" value="${d.cost || 0}" style="width:58px; text-align:center; padding:5px; border-radius:8px; background:#070b14; color:#34d399; border:1px solid var(--glass-border); font-size:0.8rem; font-weight:800;" onchange="updateCost('${d.id}', this.value)">`;
+                    chatBtn = `<button class="action-btn" onclick="openChat('${d.id}')">💬 ${unread ? '🔴' : ''} شات</button>`;
                 }
 
                 tbody.innerHTML += `
@@ -743,7 +753,7 @@
                         <td>${costCell}</td>
                         <td>
                             <div style="display:flex; gap:5px; justify-content:center;">
-                                <button class="action-btn" onclick="openChat('${d.id}')">💬 ${unread ? '🔴' : ''} شات</button>
+                                ${chatBtn}
                                 <button class="action-btn whatsapp-btn" onclick="sendWhatsappMsg('${d.id}')" title="مراسلة واتساب فورية">📱 واتساب</button>
                                 <button class="action-btn print-btn" onclick="printReceipt('${d.id}')" title="طباعة فاتورة حرارية">🖨️ إيصال</button>
                             </div>
@@ -859,14 +869,17 @@
             window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${text}`, '_blank');
         }
 
-        // ==========================================
-        // 💬 إدارة الشات وقراءة الرسائل اللحظية للفني
-        // ==========================================
         function openChat(id) {
-            activeChatId = String(id);
             let d = devices.find(x => String(x.id) === String(id));
             if(!d) return;
+            
+            // منع فتح الشات للأجهزة التي تم تسليمها أو استرجاعها
+            if(d.status.includes('تم تسليم') || d.status.includes('مسترجع')) {
+                showVipModal("تنبيه", "لا يمكن فتح المحادثة لجهاز تم تسليمه أو استرجاعه.", "⚠️");
+                return;
+            }
 
+            activeChatId = String(id);
             document.getElementById('chatBoxContainer').style.display = 'block';
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             renderChatMsgs(d.chat || []);
@@ -880,6 +893,7 @@
 
             (chat || []).filter(m => !m.isCall).forEach(m => {
                 let isTech = m.sender === 'tech';
+                // تحديد وقت القراءة في الوقت الفعلي
                 if(!isTech && !m.readByTech) {
                     m.readByTech = true;
                     m.readTime = currentTime;
@@ -940,9 +954,6 @@
             renderChatMsgs(chat);
         }
 
-        // ==========================================
-        // 📊 التقارير الشاملة المتقدمة
-        // ==========================================
         function getFilteredReportData() {
             let from = document.getElementById('reportFromDate')?.value;
             let to = document.getElementById('reportToDate')?.value;
@@ -1048,19 +1059,43 @@
             document.getElementById('repTotalDevicesCount').innerText = list.length + ' جهاز';
             document.getElementById('repTotalCostSum').innerText = totalCost + ' ' + curConf.currency;
 
+            // تفعيل طباعة التقرير بقوة
             document.body.classList.remove('print-receipt-mode');
             document.body.classList.add('print-report-mode');
+            
+            let reportSection = document.getElementById('printableReportSection');
+            reportSection.style.display = 'block'; // إظهار التقرير إجبارياً للطباعة
+
             setTimeout(() => {
                 window.print();
                 document.body.classList.remove('print-report-mode');
-            }, 300);
+                reportSection.style.display = 'none'; // إخفاء التقرير بعد الطباعة
+            }, 500);
         }
 
         // ==========================================
-        // 📞 المكالمات الصوتية الحية للفني (PeerJS)
+        // 📞 المكالمات و عداد الثواني
         // ==========================================
         function sanitizePeerId(id) {
             return (id || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        function startCallTimer() {
+            callSeconds = 0;
+            let timerEl = document.getElementById('callTimerDisplay');
+            timerEl.innerText = "00:00";
+            timerEl.style.display = "block";
+            callTimerInterval = setInterval(() => {
+                callSeconds++;
+                let m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+                let s = String(callSeconds % 60).padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopCallTimer() {
+            if(callTimerInterval) clearInterval(callTimerInterval);
+            document.getElementById('callTimerDisplay').style.display = "none";
         }
 
         function initTechVoice(tech) {
@@ -1070,11 +1105,20 @@
 
             myPeer.on('call', call => {
                 currentCall = call;
+                
+                // استخراج اسم العميل من الـ Peer ID الوارد
+                let peerId = call.peer; 
+                let trackNum = peerId.replace('alhawary_client_', '');
+                let callerDevice = devices.find(d => d.tracking_number === trackNum);
+                let callerName = callerDevice ? callerDevice.customer_name : 'عميل غير معروف';
+
                 document.getElementById('callScreen').classList.add('active');
+                document.getElementById('callTargetName').innerText = callerName;
                 document.getElementById('callStatusText').innerText = 'مكالمة واردة من العميل...';
                 document.getElementById('btnAnswerCall').style.display = 'flex';
+                
                 startIncomingRingtone();
-                showDesktopNotification("اتصال وارد من عميل", "يوجد عميل يتصل بك الآن عبر المنصة 📞");
+                showDesktopNotification("اتصال وارد من عميل", `العميل ${callerName} يتصل بك الآن 📞`);
             });
 
             myPeer.on('error', err => {
@@ -1090,6 +1134,7 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 document.getElementById('callScreen').classList.add('active');
+                document.getElementById('callTargetName').innerText = d.customer_name;
                 document.getElementById('btnAnswerCall').style.display = 'none';
                 document.getElementById('callStatusText').innerText = 'جاري الاتصال بالعميل...';
                 
@@ -1102,6 +1147,7 @@
                     stopCallRingtone();
                     document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢';
                     document.getElementById('remoteAudio').srcObject = remoteStream;
+                    startCallTimer(); // تشغيل عداد الثواني
                 });
                 call.on('close', endCurrentCall);
                 call.on('error', endCurrentCall);
@@ -1119,6 +1165,7 @@
                 currentCall.on('stream', remoteStream => {
                     document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢';
                     document.getElementById('remoteAudio').srcObject = remoteStream;
+                    startCallTimer(); // تشغيل عداد الثواني
                 });
                 currentCall.on('close', endCurrentCall);
             } catch(e) {
@@ -1146,6 +1193,7 @@
 
         function endCurrentCall() {
             stopCallRingtone();
+            stopCallTimer();
             if(currentCall) currentCall.close();
             if(localStream) localStream.getTracks().forEach(t => t.stop());
             document.getElementById('callScreen').classList.remove('active');

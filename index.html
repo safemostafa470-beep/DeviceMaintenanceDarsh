@@ -180,6 +180,7 @@
     <div id="callScreen" class="call-screen-overlay">
         <div class="call-avatar">🛠️</div>
         <div class="call-name" id="callTargetName">مهندس الصيانة المسؤول</div>
+        <div style="font-size: 1.4rem; color: #10b981; font-weight: 900; font-family: monospace; margin-bottom: 10px; display:none;" id="callTimerDisplay">00:00</div>
         <div class="call-status" id="callStatusText">جاري الاتصال...</div>
         <div class="call-actions">
             <button class="btn-call-action btn-mute-call" id="btnMuteCall" onclick="toggleMute()" title="كتم المايك">🎤</button>
@@ -240,7 +241,7 @@
                 <div class="info-row"><span data-i18n="lblDevice">نوع الجهاز:</span> <span id="resDevice">-</span></div>
                 <div class="info-row"><span data-i18n="lblProblem">العطل المشخص:</span> <span id="resProblem">-</span></div>
                 <div class="info-row"><span data-i18n="lblDetails">الملاحظات والتقرير:</span> <span id="resDetails">-</span></div>
-                <div class="info-row"><span data-i18n="lblExpected">الوقت المقدر للتسليم:</span> <span id="resExpectedTime" style="color: var(--warning);">-</span></div>
+                <div class="info-row"><span data-i18n="lblExpected">الوقت المقدر للتسليم:</span> <span id="resExpectedTime" style="color: var(--warning); direction: ltr; display: inline-block; font-weight: bold;">-</span></div>
                 <div class="info-row"><span data-i18n="lblCost">التكلفة الإجمالية:</span> <span id="resCost" style="font-size: 1.1rem; color: #34d399;">-</span></div>
                 <div class="info-row"><span data-i18n="lblStatus">حالة الجهاز الحالية:</span> <span id="resStatus" style="color: var(--primary);">-</span></div>
 
@@ -328,7 +329,22 @@
         let audioCtx = null;
         let ringInterval = null;
 
-        // مولد نغمات صوتية Web Audio API
+        // دالة تنسيق الوقت بناءً على طلبك (مثال: AM-2:45 2026-10-07)
+        function formatSimpleDate(isoString) {
+            if(!isoString) return '-';
+            let d = new Date(isoString);
+            if(isNaN(d)) return isoString;
+            let hours = d.getHours();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            let mins = String(d.getMinutes()).padStart(2, '0');
+            let year = d.getFullYear();
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            return `${ampm}-${hours}:${mins} &nbsp;&nbsp; ${year}-${month}-${day}`;
+        }
+
         function playTone(freq1, freq2, duration) {
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -349,7 +365,6 @@
             } catch(e) {}
         }
 
-        // تشغيل نغمة الرسائل المزدوجة بوضوح ودون إزعاج (مرتين)
         function playMessagePing() {
             playTone(850, 1150, 0.12);
             setTimeout(() => {
@@ -404,7 +419,6 @@
             }
         }
 
-        // ضغط وتحجيم الصور قبل الإرسال لمنع الثقل
         function handleImageSelected(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -539,9 +553,6 @@
             }
         });
 
-        // ==========================================
-        // ⚡ البحث والتوصيل اللحظي المباشر (Realtime)
-        // ==========================================
         async function searchDevice() {
             let query = document.getElementById('searchInput').value.trim();
             if(!query) return;
@@ -568,7 +579,10 @@
 
             loadLiveAnnouncement();
 
-            if (d.status === 'تم تسليم الجهاز للعميل') {
+            // فحص الحالة بذكاء لمنع وصول العميل للشات لو كانت منتهية أو مسترجعة
+            let currentStatus = d.status || '';
+
+            if (currentStatus.includes('تم تسليم')) {
                 document.getElementById('delivTrack').innerText = d.tracking_number;
                 document.getElementById('delivName').innerText = d.customer_name;
                 document.getElementById('delivDevice').innerText = d.device_name;
@@ -578,7 +592,7 @@
                 return;
             }
 
-            if (d.status === 'مسترجع') {
+            if (currentStatus.includes('مسترجع')) {
                 document.getElementById('retTrack').innerText = d.tracking_number;
                 document.getElementById('retName').innerText = d.customer_name;
                 document.getElementById('retDevice').innerText = d.device_name;
@@ -587,11 +601,11 @@
                 return;
             }
 
+            // إذا الجهاز قيد العمل أو الصيانة يتم عرض الشات والتفاصيل
             updateUI(activeDevice);
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            // تفعيل الربط اللحظي الفوري عبر Supabase Realtime
             attachRealtimeListener(activeDevice.id);
             markTechMessagesAsRead(activeDevice);
         }
@@ -619,7 +633,6 @@
                     let oldChat = activeDevice ? (activeDevice.chat || []) : [];
                     let newChat = updated.chat || [];
 
-                    // تنبيه فوري بالرسائل الجديدة
                     if (newChat.length > oldChat.length) {
                         let lastMsg = newChat[newChat.length - 1];
                         if (lastMsg.sender === 'tech') {
@@ -629,19 +642,25 @@
                     }
 
                     activeDevice = updated;
-                    updateUI(updated);
-                    markTechMessagesAsRead(updated);
+                    
+                    // إغلاق الشاشة إذا تم تحويلها لمسلمة أو مسترجعة فجأة من الداشبورد
+                    if(updated.status.includes('تم تسليم') || updated.status.includes('مسترجع')) {
+                        searchDevice(); // إعادة تحميل الحالة الجديدة
+                    } else {
+                        updateUI(updated);
+                        markTechMessagesAsRead(updated);
+                    }
                 })
                 .subscribe();
         }
 
-        // تحديث حالة القراءة للرسائل القادمة من الفني ليعلم أن العميل شاهدها
         async function markTechMessagesAsRead(deviceObj) {
             if (!deviceObj.chat || deviceObj.chat.length === 0) return;
             let needUpdate = false;
             let currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
             let updatedChat = deviceObj.chat.map(m => {
+                // العميل يخبر الداشبورد أنه تمت قراءة رسالة الفني
                 if (m.sender === 'tech' && !m.read) {
                     needUpdate = true;
                     return { ...m, read: true, readTime: currentTime };
@@ -661,7 +680,10 @@
             document.getElementById('resDevice').innerText = d.device_name;
             document.getElementById('resProblem').innerText = d.problem || '-';
             document.getElementById('resDetails').innerText = d.details || '-';
-            document.getElementById('resExpectedTime').innerText = d.expected_time ? d.expected_time.replace('T', ' ') : '-';
+            
+            // تطبيق تنسيق الوقت المطلوب
+            document.getElementById('resExpectedTime').innerHTML = formatSimpleDate(d.expected_time);
+            
             document.getElementById('resCost').innerText = (d.cost || '0') + ' ' + currentCurrency;
             document.getElementById('resStatus').innerText = d.status;
 
@@ -692,7 +714,6 @@
         }
 
         function renderChat(chatArr) {
-            // عدم مقاطعة الفويس أثناء تشغيله
             const playingAudios = document.querySelectorAll('#clientChatMsgs audio');
             for(let a of playingAudios) {
                 if(!a.paused) return;
@@ -712,7 +733,6 @@
                 let isClient = m.sender === 'client';
                 let readInfo = '';
                 
-                // حالة قراءة الطرف الآخر (Seen)
                 if(isClient) {
                     if(m.readByTech) {
                         let t = m.readTime ? ` (${m.readTime})` : '';
@@ -769,9 +789,6 @@
             }
         }
 
-        // ==========================================
-        // 🎙️ تسجيل الفويس بدقة وتجزئة مستمرة لمنع البتر
-        // ==========================================
         async function toggleVoiceRecording() {
             let btn = document.getElementById('voiceRecordBtn');
             if(!isRecording) {
@@ -808,7 +825,7 @@
                         stream.getTracks().forEach(t => t.stop());
                     };
 
-                    mediaRecorder.start(250); // جمع التدفق كل ربع ثانية لمنع فقدان البيانات
+                    mediaRecorder.start(250); 
                     isRecording = true;
                     btn.classList.add('recording');
                 } catch(e) { 
@@ -824,10 +841,28 @@
         }
 
         // ==========================================
-        // 📞 المكالمات المباشرة بالمايك (WebRTC PeerJS)
+        // 📞 المكالمات المباشرة بالمايك وإدارة العداد
         // ==========================================
         function sanitizePeerId(id) {
             return (id || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        function startCallTimer() {
+            callSeconds = 0;
+            clearInterval(callTimer);
+            let timerEl = document.getElementById('callTimerDisplay');
+            timerEl.innerText = "00:00";
+            timerEl.style.display = "block";
+            
+            const dict = I18N[currentLang] || I18N['ar'];
+            document.getElementById('callStatusText').innerText = dict.callConnected; 
+            
+            callTimer = setInterval(() => {
+                callSeconds++;
+                let m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+                let s = String(callSeconds % 60).padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+            }, 1000);
         }
 
         function initVoicePeer(track) {
@@ -837,9 +872,17 @@
             
             myPeer.on('call', call => {
                 currentCall = call;
+                
+                // جلب اسم الفني الذي يتصل وعرضه للعميل
+                let callerId = call.peer; 
+                let techName = callerId.replace('alhawary_tech_', '');
+                let formattedTechName = (I18N[currentLang].techLabel || 'المهندس: ') + ' ' + techName;
+                
                 document.getElementById('callScreen').classList.add('active');
+                document.getElementById('callTargetName').innerText = formattedTechName;
                 document.getElementById('callStatusText').innerText = I18N[currentLang].callIncoming;
                 document.getElementById('btnAnswerCall').style.display = 'flex';
+                
                 startIncomingRingtone();
                 showDesktopNotification("اتصال صوتي وارد", "مهندس الصيانة يتصل بك الآن 📞");
             });
@@ -854,6 +897,9 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 document.getElementById('callScreen').classList.add('active');
+                
+                // وضع اسم المهندس
+                document.getElementById('callTargetName').innerText = (I18N[currentLang].techLabel || 'المهندس: ') + ' ' + (activeDevice.technician || '');
                 document.getElementById('btnAnswerCall').style.display = 'none';
                 document.getElementById('callStatusText').innerText = I18N[currentLang].callingTech;
                 
@@ -908,23 +954,14 @@
             }
         }
 
-        function startCallTimer() {
-            callSeconds = 0;
-            clearInterval(callTimer);
-            const dict = I18N[currentLang] || I18N['ar'];
-            callTimer = setInterval(() => {
-                callSeconds++;
-                let m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-                let s = String(callSeconds % 60).padStart(2, '0');
-                document.getElementById('callStatusText').innerText = `${dict.callConnected} (${m}:${s})`;
-            }, 1000);
-        }
-
         function endCurrentCall() {
             stopCallRingtone();
             clearInterval(callTimer);
+            document.getElementById('callTimerDisplay').style.display = "none";
+            
             if(currentCall) currentCall.close();
             if(localStream) localStream.getTracks().forEach(t => t.stop());
+            
             document.getElementById('callScreen').classList.remove('active');
             document.getElementById('remoteAudio').srcObject = null;
             isMuted = false;
