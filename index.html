@@ -9,111 +9,108 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-deep: #020617; /* كحلي فضائي عميق */
-            --card-surface: rgba(15, 23, 42, 0.75);
-            --primary: #38bdf8; /* أزرق نيون للعميل */
-            --primary-glow: rgba(56, 189, 248, 0.35);
+            --bg-deep: #020617; /* كحلي فضائي للعميل */
+            --card-surface: #0f172a; 
+            --primary: #0ea5e9; /* أزرق سماوي نيون */
+            --primary-glow: rgba(14, 165, 233, 0.4);
             --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border: #1e293b;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-deep); background-attachment: fixed; color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        body { background: var(--bg-deep); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; font-size: 15px; }
 
-        .notif-banner { width: 100%; background: rgba(56, 189, 248, 0.95); color: #000; padding: 8px 14px; font-size: 0.85rem; font-weight: 800; display: none; justify-content: space-between; align-items: center; position: fixed; top: 50px; z-index: 1001; box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(10px); }
-        .notif-btn { background: #000; color: var(--primary); border: none; padding: 4px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.8rem; }
+        .notif-banner { width: 100%; background: var(--primary); color: #000; padding: 10px 16px; font-size: 0.95rem; font-weight: 900; display: none; justify-content: space-between; align-items: center; position: fixed; top: 50px; z-index: 1001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .notif-btn { background: #000; color: var(--primary); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 900; cursor: pointer; font-size: 0.85rem; }
 
-        .announcement-bar { width: 100%; height: 50px; background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899); background-size: 300% 300%; animation: rainbowFlow 8s ease infinite; position: fixed; top: 0; left: 0; z-index: 1000; display: flex; align-items: center; overflow: hidden; border-bottom: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); direction: ltr !important; }
+        .announcement-bar { width: 100%; height: 55px; background: linear-gradient(90deg, #3b82f6, #6366f1, #a855f7); background-size: 300% 300%; animation: rainbowFlow 8s ease infinite; position: fixed; top: 0; left: 0; z-index: 1000; display: flex; align-items: center; overflow: hidden; border-bottom: 2px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5); direction: ltr !important; }
         @keyframes rainbowFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
         .ticker-content { display: inline-flex; white-space: nowrap; will-change: transform; animation: tickerScroll 25s linear infinite; }
-        .ticker-text { display: inline-block; padding: 0 45px; font-size: 1.15rem; font-weight: 900; color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8); letter-spacing: 0.5px; direction: rtl; }
+        .ticker-text { display: inline-block; padding: 0 45px; font-size: 1.2rem; font-weight: 900; color: #ffffff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); direction: rtl; }
         @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        .top-settings-bar { position: fixed; top: 62px; right: 15px; z-index: 999; display: flex; gap: 8px; background: rgba(2, 6, 23, 0.85); padding: 6px 12px; border-radius: 14px; border: 1px solid var(--glass-border); backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+        .top-settings-bar { position: fixed; top: 65px; right: 15px; z-index: 999; display: flex; gap: 8px; background: #020617; padding: 8px 14px; border-radius: 16px; border: 2px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
         html[dir="ltr"] .top-settings-bar { right: auto; left: 15px; }
-        .settings-select { background: transparent; color: #ffffff; border: 1px solid var(--glass-border); padding: 6px 10px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; outline: none; cursor: pointer; }
-        .settings-select option { background: #020617; color: #fff; }
+        .settings-select { background: transparent; color: #ffffff; border: none; font-size: 0.9rem; font-weight: 900; outline: none; cursor: pointer; }
+        .settings-select option { background: #0f172a; color: #fff; }
 
-        .container { width: 100%; max-width: 680px; margin: auto; padding: 125px 14px 30px 14px; }
-        .card { background: var(--card-surface); border: 1px solid var(--glass-border); padding: 26px 20px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.6); backdrop-filter: blur(20px); }
-        h2 { font-size: 1.35rem; color: var(--primary); margin-bottom: 22px; text-align: center; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .container { width: 100%; max-width: 700px; margin: auto; padding: 135px 16px 30px 16px; }
+        .card { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 30px 24px; border-radius: 24px; margin-bottom: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        h2 { font-size: 1.4rem; color: var(--primary); margin-bottom: 26px; text-align: center; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-box input { flex: 1; padding: 13px 18px; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(2, 6, 23, 0.65); color: white; font-size: 0.95rem; font-weight: 700; outline: none; transition: 0.2s; }
-        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+        .search-box { display: flex; gap: 12px; margin-bottom: 24px; }
+        /* توحيد الخط لـ 16px هنا لمنع الزووم في الموبايل */
+        .search-box input { flex: 1; padding: 16px 20px; border-radius: 16px; border: 2px solid var(--glass-border); background: #020617; color: white; font-size: 16px; font-weight: 800; outline: none; transition: 0.2s; }
+        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2); }
         
-        button.primary-btn { background: var(--accent-gradient); color: #fff; border: none; padding: 13px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 0.95rem; box-shadow: 0 6px 20px var(--primary-glow); transition: 0.2s; }
+        button.primary-btn { background: var(--accent-gradient); color: #fff; border: none; padding: 16px 28px; border-radius: 16px; font-weight: 900; cursor: pointer; font-size: 1.05rem; box-shadow: 0 8px 25px var(--primary-glow); transition: 0.2s; }
         button.primary-btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
         .result-section { display: none; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.95rem; }
-        .info-row span:first-child { color: var(--text-sub); font-weight: 600; }
-        .info-row span:last-child { font-weight: 800; color: #fff; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--glass-border); font-size: 1.05rem; }
+        .info-row span:first-child { color: var(--text-sub); font-weight: 800; }
+        .info-row span:last-child { font-weight: 900; color: #fff; text-align: left; }
 
-        .status-special-card { display: none; padding: 30px 22px; border-radius: 22px; text-align: center; animation: fadeIn 0.4s ease; margin-top: 15px; box-shadow: 0 20px 45px rgba(0,0,0,0.5); }
-        .status-delivered-card { background: rgba(16, 185, 129, 0.12); border: 2px solid #10b981; }
-        .status-returned-card { background: rgba(245, 158, 11, 0.12); border: 2px solid #f59e0b; }
-        .extra-box { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); padding: 16px; border-radius: 16px; margin-top: 20px; text-align: center; }
-        .extra-box p { font-size: 0.95rem; color: #fcd34d; margin-bottom: 12px; font-weight: 700; }
-        .action-buttons { display: flex; gap: 10px; justify-content: center; }
-        .approve-btn, .reject-btn { color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; flex: 1; transition: 0.2s; }
+        .status-special-card { display: none; padding: 35px 24px; border-radius: 24px; text-align: center; animation: fadeIn 0.4s ease; margin-top: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .status-delivered-card { background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; }
+        .status-returned-card { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; }
+        .extra-box { background: rgba(245, 158, 11, 0.1); border: 2px solid rgba(245, 158, 11, 0.4); padding: 20px; border-radius: 18px; margin-top: 24px; text-align: center; }
+        .extra-box p { font-size: 1.1rem; color: #fcd34d; margin-bottom: 16px; font-weight: 900; }
+        .action-buttons { display: flex; gap: 14px; justify-content: center; }
+        .approve-btn, .reject-btn { color: white; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; flex: 1; font-size: 1.05rem; }
         .approve-btn { background: #10b981; } .reject-btn { background: #ef4444; }
 
-        /* الشات للعميل */
-        .chat-container { margin-top: 20px; background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; height: 410px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
-        .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
-        .chat-title-info span:first-child { font-size: 0.92rem; color: var(--primary); font-weight: 800; }
-        .chat-title-info span:last-child { font-size: 0.75rem; color: var(--success); margin: 0 5px; font-weight: 700; }
-        .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.05rem; }
+        /* الشات الواضح للعميل */
+        .chat-container { margin-top: 26px; background: #020617; border: 2px solid var(--primary); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; height: 450px; box-shadow: inset 0 0 25px rgba(0,0,0,0.6); }
+        .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--glass-border); padding-bottom: 12px; }
+        .chat-title-info span:first-child { font-size: 1.05rem; color: var(--primary); font-weight: 900; }
+        .chat-title-info span:last-child { font-size: 0.85rem; color: var(--success); margin: 0 8px; font-weight: 800; }
+        .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
         
-        .chat-msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; margin-bottom: 10px; padding: 6px; }
-        .chat-msg-item { padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.5; display: flex; flex-direction: column; }
+        .chat-msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; font-size: 0.95rem; margin-bottom: 14px; padding: 10px; }
+        .chat-msg-item { padding: 14px 18px; border-radius: 16px; max-width: 82%; line-height: 1.6; display: flex; flex-direction: column; font-weight: 800; }
         
-        /* رسائل العميل (أنت) - يمين */
-        .chat-msg-client { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); align-self: flex-start; color: #bae6fd; text-align: start; border-top-right-radius: 2px; }
-        /* رسائل الفني - يسار */
-        .chat-msg-tech { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); align-self: flex-end; color: #cbd5e1; text-align: start; border-top-left-radius: 2px; }
+        .chat-msg-client { background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.3); align-self: flex-start; color: #bae6fd; text-align: start; border-top-right-radius: 4px; }
+        .chat-msg-tech { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); align-self: flex-end; color: #f8fafc; text-align: start; border-top-left-radius: 4px; }
         
-        .chat-img-thumb { max-width: 190px; max-height: 190px; border-radius: 10px; margin-top: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+        .chat-img-thumb { max-width: 220px; max-height: 220px; border-radius: 12px; margin-top: 8px; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
         
-        .chat-input-row { display: flex; gap: 6px; align-items: center; }
-        .chat-input-row input { flex: 1; padding: 11px 14px; border-radius: 12px; background: rgba(2, 6, 23, 0.9); border: 1px solid var(--glass-border); color: #fff; outline: none; transition: 0.2s; }
+        .chat-input-row { display: flex; gap: 8px; align-items: center; }
+        .chat-input-row input { flex: 1; padding: 14px 18px; border-radius: 14px; background: #0f172a; border: 2px solid var(--glass-border); color: #fff; font-size: 16px; font-weight: 800; outline: none; }
         .chat-input-row input:focus { border-color: var(--primary); }
-        .icon-action-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.15rem; transition: 0.2s; }
-        .icon-action-btn:hover { background: rgba(56, 189, 248, 0.2); color: var(--primary); border-color: var(--primary); }
+        .icon-action-btn { background: #0f172a; border: 2px solid var(--glass-border); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; transition: 0.2s; }
+        .icon-action-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--primary); color: var(--primary); }
         .voice-btn.recording { background: #ef4444; border-color: #ef4444; color: white; animation: pulse-record 1s infinite; }
 
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
-        .call-avatar { width: 110px; height: 110px; background: var(--accent-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 20px; animation: pulse-avatar 1.5s infinite; }
-        @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(56,189,248,0.7); } 70% { box-shadow: 0 0 0 25px rgba(56,189,248,0); } 100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); } }
-        .call-name { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
-        .call-status { font-size: 1.1rem; color: #94a3b8; margin-bottom: 35px; }
-        .call-actions { display: flex; gap: 20px; align-items: center; }
-        .btn-call-action { width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 1.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .call-avatar { width: 120px; height: 120px; background: var(--accent-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 24px; animation: pulse-avatar 1.5s infinite; }
+        @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,0.7); } 70% { box-shadow: 0 0 0 30px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
+        .call-actions { display: flex; gap: 24px; align-items: center; }
+        .btn-call-action { width: 75px; height: 75px; border-radius: 50%; border: none; font-size: 1.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
         .btn-end-call { background: #ef4444; color: white; }
         .btn-answer-call { background: #10b981; color: white; display: none; }
-        .btn-mute-call { background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; }
+        .btn-mute-call { background: rgba(255,255,255,0.15); color: white; font-size: 1.5rem; }
         .btn-mute-call.muted { background: #f59e0b; }
 
         .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        .lightbox-modal img { max-width: 90%; max-height: 80%; border-radius: 12px; border: 2px solid var(--primary); }
-        .lightbox-close { position: absolute; top: 20px; right: 25px; color: white; font-size: 2rem; cursor: pointer; }
-        .footer-link { text-align: center; margin-top: 25px; }
-        .footer-link a { color: var(--text-sub); text-decoration: none; font-size: 0.88rem; font-weight: 700; }
+        .lightbox-modal img { max-width: 95%; max-height: 85%; border-radius: 16px; border: 3px solid var(--primary); }
+        .lightbox-close { position: absolute; top: 25px; right: 30px; color: white; font-size: 2.5rem; cursor: pointer; }
+        .footer-link { text-align: center; margin-top: 30px; }
+        .footer-link a { color: var(--text-sub); text-decoration: none; font-size: 1rem; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -141,9 +138,9 @@
 
     <div id="callScreen" class="call-screen-overlay">
         <div class="call-avatar">🛠️</div>
-        <div class="call-name" id="callTargetName">مهندس الصيانة</div>
-        <div style="font-size: 1.4rem; color: #10b981; font-weight: 900; font-family: monospace; margin-bottom: 10px; display:none;" id="callTimerDisplay">00:00</div>
-        <div class="call-status" id="callStatusText">جاري الاتصال...</div>
+        <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 8px;" id="callTargetName">المهندس المسؤول</div>
+        <div style="font-size: 1.6rem; color: #10b981; font-weight: 900; font-family: monospace; margin-bottom: 12px; display:none;" id="callTimerDisplay">00:00</div>
+        <div style="font-size: 1.2rem; color: #94a3b8; margin-bottom: 40px; font-weight: 800;" id="callStatusText">جاري الاتصال...</div>
         <div class="call-actions">
             <button class="btn-call-action btn-mute-call" id="btnMuteCall" onclick="toggleMute()" title="كتم المايك">🎤</button>
             <button class="btn-call-action btn-answer-call" id="btnAnswerCall" onclick="answerIncomingCall()">📞</button>
@@ -167,40 +164,40 @@
             </div>
 
             <div id="deliveredCard" class="status-special-card status-delivered-card">
-                <div style="font-size: 3.5rem; margin-bottom: 10px;">🎉</div>
-                <h3 id="delivTitle" style="color: #34d399; font-size: 1.4rem; margin-bottom: 8px; font-weight: 900;" data-i18n="delivTitle">تم تسليم جهازك بنجاح!</h3>
-                <p id="customThankMsg" style="color: #f1f5f9; font-size: 1.15rem; line-height: 1.6; margin-bottom: 16px; font-weight: 800;">شكراً لثقتكم شرفتم 💐🤝</p>
-                <div style="background: rgba(2,6,23,0.5); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px; margin-bottom: 16px; font-size: 0.92rem; text-align: start; line-height: 1.8;">
-                    <div><b data-i18n="lblTrack">رقم التتبع:</b> <span id="delivTrack" style="color:var(--primary); font-family:monospace;"></span></div>
+                <div style="font-size: 4rem; margin-bottom: 15px;">🎉</div>
+                <h3 id="delivTitle" style="color: #34d399; font-size: 1.6rem; margin-bottom: 10px; font-weight: 900;" data-i18n="delivTitle">تم تسليم جهازك بنجاح!</h3>
+                <p id="customThankMsg" style="color: #f1f5f9; font-size: 1.2rem; line-height: 1.6; margin-bottom: 20px; font-weight: 900;">شكراً لثقتكم شرفتم 💐🤝</p>
+                <div style="background: rgba(2,6,23,0.6); border: 2px solid var(--glass-border); border-radius: 18px; padding: 18px; margin-bottom: 20px; font-size: 1.05rem; text-align: start; line-height: 1.8;">
+                    <div><b data-i18n="lblTrack">رقم التتبع:</b> <span id="delivTrack" style="color:var(--primary); font-family:monospace; font-weight:bold;"></span></div>
                     <div><b data-i18n="lblName">اسم العميل:</b> <span id="delivName"></span></div>
                     <div><b data-i18n="lblDevice">الجهاز:</b> <span id="delivDevice"></span></div>
-                    <div><b data-i18n="lblCostPaid">التكلفة:</b> <span id="delivCost" style="color:#34d399; font-weight:900;"></span></div>
+                    <div><b data-i18n="lblCostPaid">التكلفة:</b> <span id="delivCost" style="color:#34d399; font-weight:900; font-size:1.1rem;"></span></div>
                 </div>
-                <div id="warrantyBox" style="background: rgba(16, 185, 129, 0.15); border: 1px dashed #10b981; padding: 12px; border-radius: 12px; font-size: 0.88rem; color: #a7f3d0; font-weight: 700;" data-i18n="warrantyMsg">
+                <div id="warrantyBox" style="background: rgba(16, 185, 129, 0.15); border: 2px dashed #10b981; padding: 16px; border-radius: 16px; font-size: 1rem; color: #a7f3d0; font-weight: 800;" data-i18n="warrantyMsg">
                     🛡 الضمان الذهبي مفعل لمدة 30 يوماً من تاريخ الاستلام.
                 </div>
             </div>
 
             <div id="returnedCard" class="status-special-card status-returned-card">
-                <div style="font-size: 3.5rem; margin-bottom: 10px;">🔄</div>
-                <h3 id="retTitle" style="color: #fbbf24; font-size: 1.4rem; margin-bottom: 8px; font-weight: 900;" data-i18n="retTitle">تم استرجاع الجهاز</h3>
-                <p id="retDesc" style="color: #f1f5f9; font-size: 1rem; line-height: 1.6; margin-bottom: 16px;" data-i18n="retDesc">سعدنا بزيارتك ونتطلع لخدمتك بشكل أفضل دائماً.</p>
-                <div style="background: rgba(2,6,23,0.5); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px; font-size: 0.92rem; text-align: start; line-height: 1.8;">
-                    <div><b data-i18n="lblTrack">رقم التتبع:</b> <span id="retTrack" style="color:var(--primary); font-family:monospace;"></span></div>
+                <div style="font-size: 4rem; margin-bottom: 15px;">🔄</div>
+                <h3 id="retTitle" style="color: #ef4444; font-size: 1.6rem; margin-bottom: 10px; font-weight: 900;" data-i18n="retTitle">تم استرجاع الجهاز</h3>
+                <p id="retDesc" style="color: #f1f5f9; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px; font-weight: 800;" data-i18n="retDesc">سعدنا بزيارتك ونتطلع لخدمتك بشكل أفضل دائماً.</p>
+                <div style="background: rgba(2,6,23,0.6); border: 2px solid var(--glass-border); border-radius: 18px; padding: 18px; font-size: 1.05rem; text-align: start; line-height: 1.8;">
+                    <div><b data-i18n="lblTrack">رقم التتبع:</b> <span id="retTrack" style="color:var(--primary); font-family:monospace; font-weight:bold;"></span></div>
                     <div><b data-i18n="lblName">اسم العميل:</b> <span id="retName"></span></div>
                     <div><b data-i18n="lblDevice">الجهاز:</b> <span id="retDevice"></span></div>
                 </div>
             </div>
 
             <div id="resultSection" class="result-section">
-                <div class="info-row"><span data-i18n="lblTrack">رقم التتبع:</span> <span id="resTrack" style="color:var(--primary); font-family:monospace;">-</span></div>
+                <div class="info-row"><span data-i18n="lblTrack">رقم التتبع:</span> <span id="resTrack" style="color:var(--primary); font-family:monospace; font-size:1.1rem;">-</span></div>
                 <div class="info-row"><span data-i18n="lblName">اسم العميل:</span> <span id="resName">-</span></div>
                 <div class="info-row"><span data-i18n="lblDevice">نوع الجهاز:</span> <span id="resDevice">-</span></div>
                 <div class="info-row"><span data-i18n="lblProblem">العطل:</span> <span id="resProblem">-</span></div>
                 <div class="info-row"><span data-i18n="lblDetails">الملاحظات:</span> <span id="resDetails">-</span></div>
-                <div class="info-row"><span data-i18n="lblExpected">وقت التسليم المقدر:</span> <span id="resExpectedTime" style="color: var(--warning); direction: ltr; font-weight: bold;">-</span></div>
-                <div class="info-row"><span data-i18n="lblCost">التكلفة الإجمالية:</span> <span id="resCost" style="font-size: 1.1rem; color: #34d399;">-</span></div>
-                <div class="info-row"><span data-i18n="lblStatus">حالة الجهاز:</span> <span id="resStatus" style="color: var(--primary);">-</span></div>
+                <div class="info-row"><span data-i18n="lblExpected">وقت التسليم المقدر:</span> <span id="resExpectedTime" style="color: var(--warning); direction: ltr; font-weight: 900;">-</span></div>
+                <div class="info-row"><span data-i18n="lblCost">التكلفة الإجمالية:</span> <span id="resCost" style="font-size: 1.2rem; color: #34d399;">-</span></div>
+                <div class="info-row"><span data-i18n="lblStatus">حالة الجهاز:</span> <span id="resStatus" style="color: var(--primary); font-size:1.1rem;">-</span></div>
 
                 <div id="extraNoticeBox" class="extra-box" style="display: none;">
                     <p id="extraNoticeText"></p>
@@ -218,14 +215,14 @@
                     <div class="chat-msgs" id="clientChatMsgs"></div>
                     <div class="chat-input-row">
                         <input type="text" id="clientChatInput" placeholder="اكتب استفسارك..." onkeydown="if(event.key==='Enter') sendClientMsg()">
-                        <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
-                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                        <button class="primary-btn" onclick="sendClientMsg()" data-i18n="sendBtn">إرسال</button>
+                        <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
+                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                        <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendClientMsg()" style="padding:14px 20px;" data-i18n="sendBtn">إرسال</button>
                     </div>
                 </div>
             </div>
             
-            <div id="noResultMsg" style="text-align: center; font-size: 0.95rem; display: none; margin-top: 15px; font-weight: 800; color: var(--danger);"></div>
+            <div id="noResultMsg" style="text-align: center; font-size: 1.1rem; display: none; margin-top: 20px; font-weight: 900; color: var(--danger);"></div>
         </div>
 
         <div class="footer-link">
@@ -247,7 +244,7 @@
                 lblTrack: "رقم التتبع:", lblName: "العميل:", lblDevice: "الجهاز:", lblCostPaid: "التكلفة:",
                 lblProblem: "العطل:", lblDetails: "الملاحظات:", lblExpected: "وقت التسليم:", lblCost: "التكلفة:",
                 lblStatus: "الحالة:", chatTitle: "💬 التحدث مع المهندس", chatLive: "● متصل", chatPlaceholder: "اكتب رسالتك...", sendBtn: "إرسال", approveBtn: "موافقة", rejectBtn: "رفض",
-                footerPortal: "🔒 لوحة الفنيين", noResult: "❌ لم يتم العثور على أي جهاز.", chatEmpty: "المحادثة مشفرة مع المركز.", callIncoming: "مكالمة واردة...", callingTech: "جاري الاتصال...", callConnected: "متصلة 🟢", techLabel: "🛠️ المهندس:", clientLabel: "👤 أنت:"
+                footerPortal: "🔒 لوحة الفنيين", noResult: "❌ لم يتم العثور على أي جهاز بهذا الرقم.", chatEmpty: "المحادثة مشفرة مع المركز.", callIncoming: "مكالمة واردة...", callingTech: "جاري الاتصال...", callConnected: "متصلة 🟢", techLabel: "🛠️ المهندس:", clientLabel: "👤 أنت:"
             },
             en: {
                 docTitle: "Maintenance Tracking", searchHeader: "Check Status", searchBtn: "Search",
@@ -265,8 +262,8 @@
         let currentCountry = localStorage.getItem('app_country') || 'EG'; 
         let currentCurrency = 'ج.م';
         let activeDevice = null;
-        let realtimeSubscription = null;
-        
+        let chatPollInterval = null;
+
         let myPeer = null; 
         let currentCall = null; 
         let localStream = null;
@@ -356,7 +353,7 @@
             let returnedCard = document.getElementById('returnedCard'); let resultSection = document.getElementById('resultSection');
 
             deliveredCard.style.display = 'none'; returnedCard.style.display = 'none'; resultSection.style.display = 'none';
-            if (error || !data || data.length === 0) { msgBox.innerHTML = I18N[currentLang].noResult; msgBox.style.display = 'block'; activeDevice = null; detachRealtimeListener(); return; }
+            if (error || !data || data.length === 0) { msgBox.innerHTML = I18N[currentLang].noResult; msgBox.style.display = 'block'; activeDevice = null; if(chatPollInterval) clearInterval(chatPollInterval); return; }
 
             msgBox.style.display = 'none';
             let d = data[0]; activeDevice = d; loadLiveAnnouncement();
@@ -365,38 +362,32 @@
             if (currentStatus.includes('تم تسليم')) {
                 document.getElementById('delivTrack').innerText = d.tracking_number; document.getElementById('delivName').innerText = d.customer_name;
                 document.getElementById('delivDevice').innerText = d.device_name; document.getElementById('delivCost').innerText = (d.cost || '0') + ' ' + currentCurrency;
-                deliveredCard.style.display = 'block'; detachRealtimeListener(); return;
+                deliveredCard.style.display = 'block'; if(chatPollInterval) clearInterval(chatPollInterval); return;
             }
             if (currentStatus.includes('مسترجع')) {
                 document.getElementById('retTrack').innerText = d.tracking_number; document.getElementById('retName').innerText = d.customer_name;
-                document.getElementById('retDevice').innerText = d.device_name; returnedCard.style.display = 'block'; detachRealtimeListener(); return;
+                document.getElementById('retDevice').innerText = d.device_name; returnedCard.style.display = 'block'; if(chatPollInterval) clearInterval(chatPollInterval); return;
             }
 
             updateUI(activeDevice);
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
-            attachRealtimeListener(activeDevice.id);
+            
+            if(chatPollInterval) clearInterval(chatPollInterval);
+            chatPollInterval = setInterval(() => syncClientChat(), 1500); // تحديث قوي وسريع للـ Read Receipts
+            syncClientChat();
         }
 
-        function detachRealtimeListener() { if (realtimeSubscription) { _supabase.removeChannel(realtimeSubscription); realtimeSubscription = null; } }
-        function attachRealtimeListener(deviceId) {
-            detachRealtimeListener();
-            realtimeSubscription = _supabase.channel(`device-realtime-${deviceId}`)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'devices', filter: `id=eq.${deviceId}` }, payload => {
-                    let updated = payload.new; if(!updated) return;
-                    let oldChat = activeDevice ? (activeDevice.chat || []) : []; let newChat = updated.chat || [];
-                    if (newChat.length > oldChat.length) {
-                        let lastMsg = newChat[newChat.length - 1];
-                        if (lastMsg.sender === 'tech') { playMessagePing(); showDesktopNotification("رسالة جديدة من المهندس", lastMsg.isImage ? "أرسل لك صورة" : (lastMsg.isVoice ? "رسالة صوتية" : lastMsg.text)); }
-                    }
-                    if(updated.status.includes('تم تسليم') || updated.status.includes('مسترجع')) { searchDevice(); } 
-                    else { 
-                        // منع الكتابة المسبقة من الضياع لو البيانات جاية من برة
-                        if (updated.chat && updated.chat.length >= (activeDevice.chat || []).length) {
-                            activeDevice = updated; updateUI(updated);
-                        }
-                    }
-                }).subscribe();
+        async function syncClientChat() {
+            if(!activeDevice || isClientSending) return; // إيقاف السحب وقت الإرسال لتجنب اختفاء الرسالة
+            let { data } = await _supabase.from('devices').select('chat, status').eq('id', activeDevice.id).single();
+            if(data) {
+                if (data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { searchDevice(); return; }
+                if (JSON.stringify(activeDevice.chat || []) !== JSON.stringify(data.chat)) {
+                    activeDevice.chat = data.chat;
+                    renderChat(data.chat);
+                }
+            }
         }
 
         function updateUI(d) {
@@ -422,13 +413,12 @@
         }
 
         function renderChat(chatArr) {
-            const playingAudios = document.querySelectorAll('#clientChatMsgs audio'); for(let a of playingAudios) { if(!a.paused) return; }
             let container = document.getElementById('clientChatMsgs');
-            let isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
+            let isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 15;
             container.innerHTML = '';
             
             let valid = (chatArr || []).filter(m => !m.isCall);
-            if(valid.length === 0) { container.innerHTML = `<div style="color:var(--text-sub); text-align:center; margin:auto; font-weight:600;">${I18N[currentLang].chatEmpty}</div>`; return; }
+            if(valid.length === 0) { container.innerHTML = `<div style="color:var(--text-sub); text-align:center; margin:auto; font-weight:800;">${I18N[currentLang].chatEmpty}</div>`; return; }
 
             let hasUnread = false;
             valid.forEach(m => {
@@ -438,18 +428,26 @@
                 let readInfo = '';
                 if(isClient) {
                     let t = m.readTime ? ` (${m.readTime})` : '';
-                    readInfo = m.isRead ? `<span style="color:var(--primary); font-weight:900; font-size:0.75rem;">✓✓ ${currentLang === 'ar' ? 'تمت القراءة' : 'Read'}${t}</span>` : `<span style="color:var(--text-sub); font-size:0.7rem;">✓ ${currentLang === 'ar' ? 'تم الإرسال' : 'Sent'}</span>`;
+                    readInfo = m.isRead ? `<span style="color:#000; font-weight:900; font-size:0.75rem;">✓✓ ${currentLang === 'ar' ? 'تمت القراءة' : 'Read'}${t}</span>` : `<span style="color:#38bdf8; font-size:0.7rem; font-weight:900;">✓ ${currentLang === 'ar' ? 'تم الإرسال' : 'Sent'}</span>`;
                 }
                 
                 let contentHTML = '';
                 if (m.isImage) contentHTML = `<img src="${m.text}" class="chat-img-thumb" onclick="openLightbox('${m.text}')">`;
-                else if (m.isVoice) contentHTML = `<audio controls preload="metadata" src="${m.text}" style="height:35px; width:200px; margin-top:5px; outline:none;"></audio>`;
-                else contentHTML = `<div style="font-weight:700;">${m.text}</div>`;
+                else if (m.isVoice) contentHTML = `<audio controls preload="metadata" src="${m.text}" style="height:40px; width:220px; margin-top:6px; outline:none;"></audio>`;
+                else contentHTML = `<div style="font-weight:800;">${m.text}</div>`;
 
-                container.innerHTML += `<div class="chat-msg-item ${isClient ? 'chat-msg-client' : 'chat-msg-tech'}"><div style="font-size:0.75rem; font-weight:900; margin-bottom:5px;">${isClient ? I18N[currentLang].clientLabel : I18N[currentLang].techLabel}</div>${contentHTML}<div style="font-size:0.65rem; margin-top:5px; display:flex; justify-content:space-between; align-items:center; opacity:0.9;"><span style="color:var(--text-sub);">${m.time}</span> ${readInfo}</div></div>`;
+                container.innerHTML += `
+                    <div class="chat-msg-item ${isClient ? 'chat-msg-client' : 'chat-msg-tech'}">
+                        <div style="font-size:0.8rem; font-weight:900; margin-bottom:6px; color:${isClient?'#0ea5e9':'#94a3b8'};">${isClient ? I18N[currentLang].clientLabel : I18N[currentLang].techLabel}</div>
+                        ${contentHTML}
+                        <div style="font-size:0.7rem; margin-top:8px; display:flex; justify-content:space-between; align-items:center; opacity:0.85;">
+                            <span style="color:${isClient?'#020617':'var(--text-sub)'};">${m.time}</span> ${readInfo}
+                        </div>
+                    </div>
+                `;
             });
             
-            if(isScrolledToBottom || hasUnread) container.scrollTop = container.scrollHeight;
+            if(isScrolledToBottom || hasUnread) setTimeout(() => container.scrollTop = container.scrollHeight, 50);
             if(hasUnread) markAsReadByClient();
         }
 
@@ -457,7 +455,7 @@
             if(!activeDevice) return;
             let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
             if(!data || !data.chat) return;
-            let changed = false; let currentTime = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            let changed = false; let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
             let newChat = data.chat.map(m => { if(m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; } return m; });
             if(changed) await _supabase.from('devices').update({chat: newChat}).eq('id', activeDevice.id);
         }
@@ -465,31 +463,23 @@
         let isClientSending = false;
 
         function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
-            if(!activeDevice) return;
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
-            if(!text || isClientSending) return;
+            if(!text || !activeDevice || isClientSending) return;
             
-            // تحديث فوري (Optimistic UI) وإبقاء الكيبورد مفتوحة
-            if(!voiceBase64 && !imageBase64) {
-                input.value = ''; 
-                input.focus(); 
-            }
+            if(!voiceBase64 && !imageBase64) { input.value = ''; input.focus(); } // تفريغ الخانة وإبقاء الكيبورد
             
-            let newMsg = { sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false };
+            let newMsg = { sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
             let currentChat = activeDevice.chat ? [...activeDevice.chat] : [];
-            currentChat.push(newMsg);
-            activeDevice.chat = currentChat;
-            renderChat(currentChat);
+            currentChat.push(newMsg); activeDevice.chat = currentChat;
+            renderChat(currentChat); // إضافة للواجهة فوراً
 
             isClientSending = true;
             _supabase.from('devices').select('chat').eq('id', activeDevice.id).single().then(({data}) => {
                 let dbChat = (data && data.chat) ? [...data.chat] : [];
                 dbChat.push(newMsg);
-                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id).then(() => {
-                    isClientSending = false;
-                });
+                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id).then(() => { isClientSending = false; });
             });
         }
 
@@ -502,11 +492,10 @@
                     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                     mediaRecorder.onstop = () => {
                         let audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                        if (audioBlob.size > 0) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(reader.result, null); }; }
+                        if (audioBlob.size > 0) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(null, reader.result); }; }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(); 
-                    isRecording = true; btn.classList.add('recording');
+                    mediaRecorder.start(); isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); }
             } else {
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
