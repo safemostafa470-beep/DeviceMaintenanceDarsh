@@ -33,7 +33,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg-deep) 100%); background-attachment: fixed; color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
-        /* شريط طلب تفعيل الإشعارات */
         .notif-banner {
             width: 100%;
             background: rgba(14, 165, 233, 0.95);
@@ -52,7 +51,6 @@
         }
         .notif-btn { background: #070b14; color: var(--primary); border: none; padding: 4px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.8rem; }
 
-        /* شريط الإعلانات المتطور */
         .announcement-bar {
             width: 100%; height: 50px;
             background: linear-gradient(90deg, #ff416c, #ff4b2b, #f7971e, #00b09b, #00c6ff);
@@ -106,15 +104,15 @@
         .approve-btn { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; flex: 1; }
         .reject-btn { background: #f43f5e; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; flex: 1; }
 
-        /* الشات المتطور */
-        .chat-container { margin-top: 20px; background: rgba(10, 15, 29, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; height: 380px; }
+        /* الشات */
+        .chat-container { margin-top: 20px; background: rgba(10, 15, 29, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; height: 410px; }
         .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
         .chat-title-info span:first-child { font-size: 0.92rem; color: var(--primary); font-weight: 800; }
         .chat-title-info span:last-child { font-size: 0.75rem; color: var(--success); margin: 0 5px; font-weight: 700; }
 
         .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.05rem; }
         .chat-msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; margin-bottom: 10px; padding: 6px; }
-        .chat-msg-item { padding: 10px 14px; border-radius: 12px; max-width: 85%; line-height: 1.4; display: flex; flex-direction: column; }
+        .chat-msg-item { padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.4; display: flex; flex-direction: column; }
         .chat-msg-tech { background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.4); align-self: flex-start; color: #a7f3d0; text-align: start; }
         .chat-msg-client { background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.4); align-self: flex-end; color: #bae6fd; text-align: start; }
         
@@ -142,7 +140,6 @@
         .btn-mute-call { background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; }
         .btn-mute-call.muted { background: #f59e0b; }
 
-        /* نافذة تكبير الصورة (Lightbox) */
         .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .lightbox-modal img { max-width: 90%; max-height: 80%; border-radius: 12px; }
         .lightbox-close { position: absolute; top: 20px; right: 25px; color: white; font-size: 2rem; cursor: pointer; }
@@ -153,13 +150,11 @@
 </head>
 <body>
 
-    <!-- شريط تفعيل الإشعارات -->
     <div id="notifBanner" class="notif-banner">
         <span>🔔 يرجى تفعيل الإشعارات لتنبيهك فور ورود مكالمة أو رسالة جديدة:</span>
         <button class="notif-btn" onclick="enableNotifications()">تفعيل الآن</button>
     </div>
 
-    <!-- شريط الإعلانات المتصل بالأدمن -->
     <div class="announcement-bar" id="announcementBar">
         <div class="ticker-wrap">
             <div class="ticker-content" id="tickerContent">
@@ -169,7 +164,6 @@
         </div>
     </div>
 
-    <!-- أزرار الإعدادات -->
     <div class="top-settings-bar">
         <select id="countrySelect" class="settings-select" onchange="changeCountry(this.value)">
             <option value="EG">🇪🇬 مصر (ج.م)</option>
@@ -183,7 +177,6 @@
         </select>
     </div>
 
-    <!-- شاشة المكالمات الصوتية الحية -->
     <div id="callScreen" class="call-screen-overlay">
         <div class="call-avatar">🛠️</div>
         <div class="call-name" id="callTargetName">مهندس الصيانة المسؤول</div>
@@ -196,13 +189,11 @@
         <audio id="remoteAudio" autoplay></audio>
     </div>
 
-    <!-- نافذة تكبير الصورة (Lightbox) -->
     <div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox()">
         <span class="lightbox-close">&times;</span>
         <img id="lightboxImg" src="" alt="صورة مكبرة">
     </div>
 
-    <!-- حقل مخفي لاختيار صورة من المعرض -->
     <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="handleImageSelected(this)">
 
     <div class="container">
@@ -213,7 +204,6 @@
                 <button class="primary-btn" onclick="searchDevice()" data-i18n="searchBtn">بحث</button>
             </div>
 
-            <!-- بطاقة استلام الجهاز بنجاح -->
             <div id="deliveredCard" class="status-special-card status-delivered-card">
                 <div style="font-size: 3.5rem; margin-bottom: 10px;">🎉</div>
                 <h3 id="delivTitle" style="color: #34d399; font-size: 1.4rem; margin-bottom: 8px; font-weight: 900;" data-i18n="delivTitle">تم تسليم جهازك بنجاح!</h3>
@@ -227,11 +217,10 @@
                     <div><b data-i18n="lblCostPaid">التكلفة المسددة:</b> <span id="delivCost" style="color:#34d399; font-weight:900;"></span></div>
                 </div>
                 <div id="warrantyBox" style="background: rgba(16, 185, 129, 0.15); border: 1px dashed #10b981; padding: 12px; border-radius: 12px; font-size: 0.88rem; color: #a7f3d0; font-weight: 700;" data-i18n="warrantyMsg">
-                    🛡️ الضمان الذهبي مفعل: صيانة جهازك مشمولة بالضمان المعتمد لمدة 30 يوماً من تاريخ الاستلام.
+                    🛡 الضمان الذهبي مفعل: صيانة جهازك مشمولة بالضمان المعتمد لمدة 30 يوماً من تاريخ الاستلام.
                 </div>
             </div>
 
-            <!-- بطاقة استرجاع الجهاز -->
             <div id="returnedCard" class="status-special-card status-returned-card">
                 <div style="font-size: 3.5rem; margin-bottom: 10px;">🔄</div>
                 <h3 id="retTitle" style="color: #fbbf24; font-size: 1.4rem; margin-bottom: 8px; font-weight: 900;" data-i18n="retTitle">تم استرجاع الجهاز</h3>
@@ -245,7 +234,6 @@
                 </div>
             </div>
 
-            <!-- تفاصيل الجهاز والشات -->
             <div id="resultSection" class="result-section">
                 <div class="info-row"><span data-i18n="lblTrack">رقم التتبع المعتمد:</span> <span id="resTrack" style="color:var(--primary); font-family:monospace;">-</span></div>
                 <div class="info-row"><span data-i18n="lblName">اسم العميل:</span> <span id="resName">-</span></div>
@@ -323,7 +311,7 @@
         let currentCountry = localStorage.getItem('app_country') || 'EG'; 
         let currentCurrency = 'ج.م';
         let activeDevice = null;
-        let pollingTimer = null;
+        let realtimeSubscription = null;
 
         let myPeer = null; 
         let currentCall = null; 
@@ -335,20 +323,22 @@
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
+        let audioMimeType = 'audio/webm';
 
-        // مولد نغمات الاتصال الصوتي الحقيقي (Web Audio API بدون روابط خارجية تفشل)
         let audioCtx = null;
         let ringInterval = null;
 
+        // مولد نغمات صوتية Web Audio API
         function playTone(freq1, freq2, duration) {
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 let osc1 = audioCtx.createOscillator();
                 let osc2 = audioCtx.createOscillator();
                 let gain = audioCtx.createGain();
                 osc1.frequency.value = freq1;
                 osc2.frequency.value = freq2;
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
                 osc1.connect(gain);
                 osc2.connect(gain);
@@ -357,6 +347,14 @@
                 osc1.stop(audioCtx.currentTime + duration);
                 osc2.stop(audioCtx.currentTime + duration);
             } catch(e) {}
+        }
+
+        // تشغيل نغمة الرسائل المزدوجة بوضوح ودون إزعاج (مرتين)
+        function playMessagePing() {
+            playTone(850, 1150, 0.12);
+            setTimeout(() => {
+                playTone(1050, 1400, 0.15);
+            }, 140);
         }
 
         function startIncomingRingtone() {
@@ -381,9 +379,6 @@
             ringInterval = null;
         }
 
-        // ==========================================
-        // 🔔 فحص وتفعيل الإشعارات
-        // ==========================================
         function checkNotificationPermission() {
             if ("Notification" in window) {
                 if (Notification.permission === "default") {
@@ -405,17 +400,11 @@
 
         function showDesktopNotification(title, body) {
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, { body: body, icon: "https://cdn-icons-png.fltr.com/512/3067/3067443.png" });
+                new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3067/3067443.png" });
             }
         }
 
-        function playMessagePing() {
-            playTone(800, 1200, 0.2); // صوت تنبيه خفيف لوصول رسالة
-        }
-
-        // ==========================================
-        // 📷 ضغط الصور ورفعها للشات
-        // ==========================================
+        // ضغط وتحجيم الصور قبل الإرسال لمنع الثقل
         function handleImageSelected(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -424,10 +413,9 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // ضغط أبعاد وجودة الصورة
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const MAX_HEIGHT = 800;
+                    const MAX_WIDTH = 750;
+                    const MAX_HEIGHT = 750;
                     let width = img.width;
                     let height = img.height;
 
@@ -442,7 +430,7 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
                     sendClientMsg(null, compressedBase64);
                 };
                 img.src = e.target.result;
@@ -459,9 +447,6 @@
             document.getElementById('lightboxModal').style.display = 'none';
         }
 
-        // ==========================================
-        // 🌐 إدارة اللغات والدول
-        // ==========================================
         function changeLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('app_lang', lang);
@@ -500,9 +485,6 @@
             if (activeDevice) updateUI(activeDevice);
         }
 
-        // ==========================================
-        // 📢 جلب الإعلانات من technicians مباشرة
-        // ==========================================
         async function loadLiveAnnouncement() {
             try {
                 let { data: techs } = await _supabase.from('technicians').select('*');
@@ -547,15 +529,7 @@
             changeCountry(currentCountry);
 
             checkNotificationPermission();
-
             loadLiveAnnouncement();
-            setInterval(loadLiveAnnouncement, 3000);
-
-            try {
-                _supabase.channel('client-realtime')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'technicians' }, () => loadLiveAnnouncement())
-                    .subscribe();
-            } catch(e) {}
 
             const urlParams = new URLSearchParams(window.location.search);
             const trackParam = urlParams.get('track');
@@ -565,6 +539,9 @@
             }
         });
 
+        // ==========================================
+        // ⚡ البحث والتوصيل اللحظي المباشر (Realtime)
+        // ==========================================
         async function searchDevice() {
             let query = document.getElementById('searchInput').value.trim();
             if(!query) return;
@@ -581,7 +558,7 @@
             if (error || !data || data.length === 0) {
                 msgBox.innerHTML = dict.noResult; msgBox.style.display = 'block';
                 activeDevice = null;
-                if(pollingTimer) clearInterval(pollingTimer);
+                detachRealtimeListener();
                 return;
             }
 
@@ -597,7 +574,7 @@
                 document.getElementById('delivDevice').innerText = d.device_name;
                 document.getElementById('delivCost').innerText = (d.cost || '0') + ' ' + currentCurrency;
                 deliveredCard.style.display = 'block';
-                if(pollingTimer) clearInterval(pollingTimer);
+                detachRealtimeListener();
                 return;
             }
 
@@ -606,7 +583,7 @@
                 document.getElementById('retName').innerText = d.customer_name;
                 document.getElementById('retDevice').innerText = d.device_name;
                 returnedCard.style.display = 'block';
-                if(pollingTimer) clearInterval(pollingTimer);
+                detachRealtimeListener();
                 return;
             }
 
@@ -614,40 +591,66 @@
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            if(pollingTimer) clearInterval(pollingTimer);
-            pollingTimer = setInterval(async () => {
-                if(!activeDevice) return;
-                let { data: updated } = await _supabase.from('devices').select('*').eq('id', activeDevice.id).single();
-                if(updated) {
-                    let oldChatCount = (activeDevice.chat || []).length;
-                    let newChatCount = (updated.chat || []).length;
-                    if (newChatCount > oldChatCount) {
-                        let lastMsg = updated.chat[newChatCount - 1];
-                        if (lastMsg.sender === 'tech') {
-                            playMessagePing();
-                            showDesktopNotification("رسالة جديدة من المهندس", lastMsg.isImage ? "أرسل لك صورة" : lastMsg.text);
-                        }
-                    }
-                    activeDevice = updated;
-                    renderChat(updated.chat || []);
-                    markTechMessagesAsRead(updated);
-                }
-            }, 2500);
+            // تفعيل الربط اللحظي الفوري عبر Supabase Realtime
+            attachRealtimeListener(activeDevice.id);
+            markTechMessagesAsRead(activeDevice);
         }
 
+        function detachRealtimeListener() {
+            if (realtimeSubscription) {
+                _supabase.removeChannel(realtimeSubscription);
+                realtimeSubscription = null;
+            }
+        }
+
+        function attachRealtimeListener(deviceId) {
+            detachRealtimeListener();
+
+            realtimeSubscription = _supabase.channel(`device-realtime-${deviceId}`)
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'devices', 
+                    filter: `id=eq.${deviceId}` 
+                }, payload => {
+                    let updated = payload.new;
+                    if(!updated) return;
+
+                    let oldChat = activeDevice ? (activeDevice.chat || []) : [];
+                    let newChat = updated.chat || [];
+
+                    // تنبيه فوري بالرسائل الجديدة
+                    if (newChat.length > oldChat.length) {
+                        let lastMsg = newChat[newChat.length - 1];
+                        if (lastMsg.sender === 'tech') {
+                            playMessagePing();
+                            showDesktopNotification("رسالة جديدة من المهندس", lastMsg.isImage ? "أرسل لك صورة" : (lastMsg.isVoice ? "رسالة صوتية" : lastMsg.text));
+                        }
+                    }
+
+                    activeDevice = updated;
+                    updateUI(updated);
+                    markTechMessagesAsRead(updated);
+                })
+                .subscribe();
+        }
+
+        // تحديث حالة القراءة للرسائل القادمة من الفني ليعلم أن العميل شاهدها
         async function markTechMessagesAsRead(deviceObj) {
             if (!deviceObj.chat || deviceObj.chat.length === 0) return;
-            let updated = false;
+            let needUpdate = false;
             let currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            let newChat = deviceObj.chat.map(m => {
+            
+            let updatedChat = deviceObj.chat.map(m => {
                 if (m.sender === 'tech' && !m.read) {
-                    updated = true;
+                    needUpdate = true;
                     return { ...m, read: true, readTime: currentTime };
                 }
                 return m;
             });
-            if (updated) {
-                await _supabase.from('devices').update({ chat: newChat }).eq('id', deviceObj.id);
+
+            if (needUpdate) {
+                await _supabase.from('devices').update({ chat: updatedChat }).eq('id', deviceObj.id);
             }
         }
 
@@ -689,23 +692,33 @@
         }
 
         function renderChat(chatArr) {
+            // عدم مقاطعة الفويس أثناء تشغيله
+            const playingAudios = document.querySelectorAll('#clientChatMsgs audio');
+            for(let a of playingAudios) {
+                if(!a.paused) return;
+            }
+
             const dict = I18N[currentLang] || I18N['ar'];
             let container = document.getElementById('clientChatMsgs');
             container.innerHTML = '';
             let valid = chatArr.filter(m => !m.isCall);
+            
             if(valid.length === 0) {
                 container.innerHTML = `<div style="color:var(--text-sub); text-align:center; margin:auto; font-weight:600;">${dict.chatEmpty}</div>`;
                 return;
             }
+
             valid.forEach(m => {
                 let isClient = m.sender === 'client';
                 let readInfo = '';
+                
+                // حالة قراءة الطرف الآخر (Seen)
                 if(isClient) {
                     if(m.readByTech) {
                         let t = m.readTime ? ` (${m.readTime})` : '';
-                        readInfo = `<span style="color:#00f2fe; font-size:0.7rem;">✓✓ ${currentLang === 'ar' ? 'مقروءة' : 'Read'}${t}</span>`;
+                        readInfo = `<span style="color:#38bdf8; font-weight:bold; font-size:0.75rem;">✓✓ ${currentLang === 'ar' ? 'تمت القراءة' : 'Read'}${t}</span>`;
                     } else {
-                        readInfo = `<span style="color:#a0aec0; font-size:0.65rem;">✓ ${currentLang === 'ar' ? 'أُرسلت' : 'Sent'}</span>`;
+                        readInfo = `<span style="color:#94a3b8; font-size:0.7rem;">✓ ${currentLang === 'ar' ? 'تم الإرسال' : 'Sent'}</span>`;
                     }
                 }
                 
@@ -713,7 +726,7 @@
                 if (m.isImage) {
                     contentHTML = `<img src="${m.text}" class="chat-img-thumb" onclick="openLightbox('${m.text}')" title="اضغط للتكبير">`;
                 } else if (m.isVoice) {
-                    contentHTML = `<audio controls src="${m.text}" style="height:32px; width:200px; margin-top:4px;"></audio>`;
+                    contentHTML = `<audio controls preload="metadata" src="${m.text}" style="height:36px; width:220px; margin-top:4px; outline:none;"></audio>`;
                 } else {
                     contentHTML = `<div>${m.text}</div>`;
                 }
@@ -722,8 +735,8 @@
                     <div class="chat-msg-item ${isClient ? 'chat-msg-client' : 'chat-msg-tech'}">
                         <div style="font-size:0.75rem; font-weight:800; margin-bottom:3px;">${isClient ? dict.clientLabel : dict.techLabel}</div>
                         ${contentHTML}
-                        <div style="font-size:0.65rem; margin-top:4px; display:flex; justify-content:space-between; opacity:0.85;">
-                            <span>${m.time}</span> ${readInfo}
+                        <div style="font-size:0.68rem; margin-top:5px; display:flex; justify-content:space-between; align-items:center; opacity:0.9;">
+                            <span style="color:var(--text-sub);">${m.time}</span> ${readInfo}
                         </div>
                     </div>
                 `;
@@ -746,6 +759,7 @@
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 readByTech: false
             });
+            
             if(!voiceBase64 && !imageBase64) input.value = '';
             
             let { data } = await _supabase.from('devices').update({ chat: chat }).eq('id', activeDevice.id).select().single();
@@ -755,39 +769,72 @@
             }
         }
 
-        // طلب المايكروفون عند التسجيل فقط
+        // ==========================================
+        // 🎙️ تسجيل الفويس بدقة وتجزئة مستمرة لمنع البتر
+        // ==========================================
         async function toggleVoiceRecording() {
             let btn = document.getElementById('voiceRecordBtn');
             if(!isRecording) {
                 try {
                     let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                        audioMimeType = 'audio/webm;codecs=opus';
+                    } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                        audioMimeType = 'audio/mp4';
+                    } else {
+                        audioMimeType = '';
+                    }
+
+                    let options = audioMimeType ? { mimeType: audioMimeType } : {};
+                    mediaRecorder = new MediaRecorder(stream, options);
                     audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        let audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                        let reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
-                        reader.onloadend = () => { sendClientMsg(reader.result, null); };
-                        stream.getTracks().forEach(t => t.stop()); // إغلاق المايك فور الانتهاء
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data && e.data.size > 0) audioChunks.push(e.data);
                     };
-                    mediaRecorder.start();
+
+                    mediaRecorder.onstop = () => {
+                        let finalType = audioMimeType || 'audio/webm';
+                        let audioBlob = new Blob(audioChunks, { type: finalType });
+                        
+                        if (audioBlob.size > 600) {
+                            let reader = new FileReader();
+                            reader.readAsDataURL(audioBlob);
+                            reader.onloadend = () => { 
+                                sendClientMsg(reader.result, null); 
+                            };
+                        }
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+
+                    mediaRecorder.start(250); // جمع التدفق كل ربع ثانية لمنع فقدان البيانات
                     isRecording = true;
                     btn.classList.add('recording');
-                } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); }
+                } catch(e) { 
+                    alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); 
+                }
             } else {
-                mediaRecorder.stop();
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
                 isRecording = false;
                 btn.classList.remove('recording');
             }
         }
 
         // ==========================================
-        // 📞 المكالمات الصوتية المباشرة مع النغمات والمايك عند الحاجة
+        // 📞 المكالمات المباشرة بالمايك (WebRTC PeerJS)
         // ==========================================
+        function sanitizePeerId(id) {
+            return (id || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
         function initVoicePeer(track) {
             if(myPeer) myPeer.destroy();
-            myPeer = new Peer('alhawary_client_' + track);
+            let cleanTrack = sanitizePeerId(track);
+            myPeer = new Peer('alhawary_client_' + cleanTrack);
+            
             myPeer.on('call', call => {
                 currentCall = call;
                 document.getElementById('callScreen').classList.add('active');
@@ -795,6 +842,10 @@
                 document.getElementById('btnAnswerCall').style.display = 'flex';
                 startIncomingRingtone();
                 showDesktopNotification("اتصال صوتي وارد", "مهندس الصيانة يتصل بك الآن 📞");
+            });
+
+            myPeer.on('error', err => {
+                console.warn('PeerJS Warn:', err.type);
             });
         }
 
@@ -808,7 +859,8 @@
                 
                 startOutgoingRingback();
                 
-                let call = myPeer.call('alhawary_tech_' + activeDevice.technician, localStream);
+                let targetPeerId = 'alhawary_tech_' + sanitizePeerId(activeDevice.technician);
+                let call = myPeer.call(targetPeerId, localStream);
                 currentCall = call;
                 call.on('stream', remoteStream => {
                     stopCallRingtone();
@@ -816,6 +868,7 @@
                     document.getElementById('remoteAudio').srcObject = remoteStream;
                 });
                 call.on('close', endCurrentCall);
+                call.on('error', endCurrentCall);
             } catch(e) {
                 alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون للاتصال.' : 'Please allow microphone access.');
             }
@@ -831,6 +884,7 @@
                     startCallTimer();
                     document.getElementById('remoteAudio').srcObject = remoteStream;
                 });
+                currentCall.on('close', endCurrentCall);
             } catch(e) {
                 alert('يرجى السماح بالمايك للرد على المكالمة');
                 endCurrentCall();
