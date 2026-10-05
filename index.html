@@ -209,11 +209,12 @@
                         <button class="messenger-call-btn" onclick="startAudioCall()" title="اتصال مباشر بالمايك">📞</button>
                     </div>
                     <div class="chat-msgs" id="clientChatMsgs"></div>
+                    <!-- تم إضافة onmousedown="event.preventDefault();" لجميع الأزرار لمنع قفل الكيبورد -->
                     <div class="chat-input-row">
                         <input type="text" id="clientChatInput" placeholder="اكتب استفسارك..." onkeydown="if(event.key==='Enter') sendClientMsg()">
-                        <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
-                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                        <button class="primary-btn" onclick="sendClientMsg()" data-i18n="sendBtn">إرسال</button>
+                        <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
+                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                        <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendClientMsg()" data-i18n="sendBtn">إرسال</button>
                     </div>
                 </div>
             </div>
@@ -372,7 +373,7 @@
             attachRealtimeListener(activeDevice.id);
             
             if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncClientChat(), 2000); // تحديث قوي ولايف كل ثانيتين
+            chatPollInterval = setInterval(() => syncClientChat(), 2000);
             syncClientChat();
         }
 
@@ -465,23 +466,28 @@
             if(changed) await _supabase.from('devices').update({chat: newChat}).eq('id', activeDevice.id);
         }
 
+        let isClientSending = false;
         async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             if(!activeDevice) return;
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
-            if(!text) return;
+            if(!text || isClientSending) return;
             
-            input.disabled = true;
+            isClientSending = true;
+            if(!voiceBase64 && !imageBase64) {
+                input.value = ''; // تفريغ فوري لسرعة الاستجابة
+                input.focus(); // إبقاء التركيز لمنع اختفاء الكيبورد
+            }
+            
             let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
             let currentChat = (data && data.chat) ? [...data.chat] : [];
             
             currentChat.push({ sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false });
             
             let { error } = await _supabase.from('devices').update({ chat: currentChat }).eq('id', activeDevice.id);
-            input.disabled = false;
+            isClientSending = false;
 
             if(!error) {
-                if(!voiceBase64 && !imageBase64) input.value = '';
                 activeDevice.chat = currentChat;
                 renderChat(currentChat);
             }
@@ -499,7 +505,7 @@
                         if (audioBlob.size > 0) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(reader.result, null); }; }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(); // تسجيل ككتلة واحدة للحفاظ على جودة الملف
+                    mediaRecorder.start(); // تسجيل ككتلة واحدة للحفاظ على جودة ونقاء الملف
                     isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); }
             } else {
@@ -535,7 +541,7 @@
             myPeer.on('call', call => {
                 currentCall = call;
                 let techNameRaw = call.peer.replace('alhawary_tech_', '');
-                let techName = decodeURIComponent(techNameRaw.replace(/_/g, '%')); // فك تشفير الاسم
+                let techName = decodeURIComponent(techNameRaw.replace(/_/g, '%'));
                 document.getElementById('callScreen').classList.add('active');
                 document.getElementById('callTargetName').innerText = (I18N[currentLang].techLabel || 'المهندس: ') + ' ' + techName;
                 document.getElementById('callStatusText').innerText = I18N[currentLang].callIncoming;

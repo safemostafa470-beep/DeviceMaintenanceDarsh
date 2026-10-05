@@ -84,7 +84,7 @@
         .filter-item label { font-size: 0.78rem; color: var(--text-sub); font-weight: 700; }
         .filter-item input, .filter-item select { padding: 9px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--glass-border); color: #fff; outline: none; font-size: 0.85rem; }
 
-        /* الشات معدل مع أيقونة المايك */
+        /* الشات */
         .chat-container-card { background: rgba(15, 23, 42, 0.98); border: 1px solid var(--primary); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .chat-msgs { height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(10, 15, 29, 0.6); border-radius: 14px; margin-bottom: 12px; }
         .chat-msg-item { padding: 9px 13px; border-radius: 12px; max-width: 80%; line-height: 1.4; font-size: 0.85rem; }
@@ -302,11 +302,12 @@
                 </div>
             </div>
             <div class="chat-msgs" id="chatMsgsDiv"></div>
+            <!-- تم إضافة onmousedown="event.preventDefault();" لجميع الأزرار لمنع قفل الكيبورد -->
             <div class="chat-input-row">
                 <input type="text" id="chatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsg()">
-                <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
-                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                <button class="primary-btn" onclick="sendTechMsg()">إرسال</button>
+                <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
+                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendTechMsg()">إرسال</button>
             </div>
         </div>
     </div>
@@ -315,7 +316,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
             <h2><span>📊</span> التقارير الشاملة والإحصائيات</h2>
             <button class="primary-btn" onclick="printFilteredReport()" style="display:flex; align-items:center; gap:6px; padding:9px 18px;">
-                <span>🖨️️</span> طباعة التقرير المفلتر (A4)
+                <span>🖨</span> طباعة التقرير المفلتر (A4)
             </button>
         </div>
 
@@ -516,7 +517,7 @@
             currentTab = tab;
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
-            let titles = { 'current': '⚙️️ الأجهزة قيد الفحص والصيانة', 'delivered': '📦 الأجهزة المسلمة للعملاء', 'returned': '🔄 الأجهزة المسترجعة' };
+            let titles = { 'current': '⚙ الأجهزة قيد الفحص والصيانة', 'delivered': '📦 الأجهزة المسلمة للعملاء', 'returned': '🔄 الأجهزة المسترجعة' };
             document.getElementById('section-add').style.display = 'none';
             document.getElementById('section-table').style.display = 'none';
             document.getElementById('section-reports').style.display = 'none';
@@ -668,8 +669,10 @@
         }
 
         // ==============================================
-        // نظام الشات اللحظي (المضمون 100% بدون تداخل)
+        // نظام الشات اللحظي (استجابة فورية وعدم قفل الكيبورد)
         // ==============================================
+        let isTechSending = false;
+        
         function closeChat() {
             document.getElementById('chatBoxContainer').style.display = 'none';
             if (chatPollInterval) clearInterval(chatPollInterval);
@@ -686,7 +689,7 @@
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             
             if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncChatData(id), 2000); // تحديث إجباري كل ثانيتين لمنع فقد الرسائل
+            chatPollInterval = setInterval(() => syncChatData(id), 2000);
             syncChatData(id);
         }
 
@@ -748,19 +751,23 @@
         async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
-            if(!text || !activeChatId) return;
+            if(!text || !activeChatId || isTechSending) return;
 
-            input.disabled = true;
+            isTechSending = true;
+            if(!imageBase64 && !voiceBase64) {
+                input.value = ''; // تفريغ فوري لسرعة الاستجابة
+                input.focus(); // إبقاء التركيز لمنع اختفاء الكيبورد
+            }
+
             let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
             let currentChat = (data && data.chat) ? [...data.chat] : [];
             
             currentChat.push({ sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false });
             
             let { error } = await _supabase.from('devices').update({ chat: currentChat }).eq('id', activeChatId);
-            input.disabled = false;
+            isTechSending = false;
 
             if(!error) {
-                if(!imageBase64 && !voiceBase64) input.value = '';
                 let d = devices.find(x => String(x.id) === String(activeChatId));
                 if(d) d.chat = currentChat;
                 renderChatMsgs(currentChat);
@@ -784,7 +791,7 @@
                         }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(); // تسجيل قطعة واحدة لضمان الجودة
+                    mediaRecorder.start(); // تسجيل قطعة واحدة للحفاظ على جودة ونقاء الملف
                     isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert('يرجى السماح بالمايكروفون لتسجيل الصوت.'); }
             } else {
@@ -877,7 +884,8 @@
             myPeer.on('call', call => {
                 currentCall = call;
                 let trackNumRaw = call.peer.replace('alhawary_client_', '');
-                let callerDevice = devices.find(d => sanitizePeerId(d.tracking_number) === trackNumRaw);
+                let trackNum = decodeURIComponent(trackNumRaw.replace(/_/g, '%'));
+                let callerDevice = devices.find(d => d.tracking_number === trackNum);
                 document.getElementById('callScreen').classList.add('active');
                 document.getElementById('callTargetName').innerText = callerDevice ? callerDevice.customer_name : 'عميل غير معروف';
                 document.getElementById('callStatusText').innerText = 'مكالمة واردة من العميل...';
