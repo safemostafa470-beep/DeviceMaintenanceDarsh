@@ -14,112 +14,126 @@
 
     <style>
         :root {
-            --bg-deep: #070b14;
-            --card-surface: rgba(15, 23, 42, 0.85);
-            --primary: #38bdf8;
-            --primary-glow: rgba(56, 189, 248, 0.35);
-            --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+            --bg-deep: #09090b; /* أسود عميق احترافي */
+            --card-surface: #18181b; /* رمادي داكن للبطاقات */
+            --primary: #eab308; /* ذهبي فاخر */
+            --primary-glow: rgba(234, 179, 8, 0.3);
+            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #ca8a04 100%);
             --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-sub: #a1a1aa;
+            --glass-border: #27272a;
             --success: #10b981;
             --warning: #f59e0b;
-            --danger: #f43f5e;
+            --danger: #ef4444;
             --badge-delivered-bg: rgba(16, 185, 129, 0.15);
             --badge-returned-bg: rgba(245, 158, 11, 0.15);
             --badge-waiting-bg: rgba(236, 72, 153, 0.15);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: radial-gradient(circle at top right, #1e1b4b 0%, var(--bg-deep) 100%); color: var(--text-main); min-height: 100vh; padding: 14px 10px; font-size: 14px; }
+        body { background: var(--bg-deep); color: var(--text-main); min-height: 100vh; padding: 14px 10px; font-size: 14px; }
 
-        .notif-banner { width: 100%; background: rgba(14, 165, 233, 0.95); color: white; padding: 8px 14px; font-size: 0.85rem; font-weight: 700; display: none; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .notif-btn { background: #070b14; color: var(--primary); border: none; padding: 4px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.8rem; }
+        .notif-banner { width: 100%; background: rgba(234, 179, 8, 0.95); color: #000; padding: 8px 14px; font-size: 0.85rem; font-weight: 800; display: none; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .notif-btn { background: #000; color: var(--primary); border: none; padding: 4px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.8rem; }
 
-        .top-nav { background: var(--card-surface); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 22px; margin-bottom: 16px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 12px; }
+        .top-nav { background: var(--card-surface); border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 22px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 12px; }
         .nav-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .shop-info { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.95rem; color: var(--primary); }
-        .shop-badge { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 800; }
-        .country-select-box { display: flex; align-items: center; gap: 6px; background: rgba(10, 15, 29, 0.7); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 12px; }
+        .shop-badge { background: rgba(234, 179, 8, 0.15); color: var(--primary); border: 1px solid rgba(234, 179, 8, 0.3); padding: 2px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 800; }
+        .country-select-box { display: flex; align-items: center; gap: 6px; background: #09090b; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 12px; }
         .country-select { background: transparent; color: #ffffff; border: none; outline: none; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
-        .country-select option { background: #0f172a; color: #fff; }
+        .country-select option { background: #18181b; color: #fff; }
 
         .nav-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-        .nav-btn { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); color: var(--text-sub); padding: 8px 14px; border-radius: 12px; cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: all 0.25s; display: inline-flex; align-items: center; gap: 6px; }
-        .nav-btn.active { background: var(--accent-gradient); color: #070b14; border-color: transparent; box-shadow: 0 6px 20px var(--primary-glow); font-weight: 900; }
-        .logout-btn { background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185; padding: 7px 14px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 0.82rem; }
+        .nav-btn { background: #09090b; border: 1px solid var(--glass-border); color: var(--text-sub); padding: 8px 14px; border-radius: 12px; cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: all 0.25s; display: inline-flex; align-items: center; gap: 6px; }
+        .nav-btn.active { background: var(--accent-gradient); color: #000; border-color: transparent; box-shadow: 0 6px 20px var(--primary-glow); font-weight: 900; }
+        .logout-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 7px 14px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 0.82rem; }
         
-        .card { background: var(--card-surface); border: 1px solid var(--glass-border); padding: 22px 18px; border-radius: 24px; margin-bottom: 16px; backdrop-filter: blur(20px); }
+        .card { background: var(--card-surface); border: 1px solid var(--glass-border); padding: 22px 18px; border-radius: 24px; margin-bottom: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         h2 { font-size: 1.15rem; color: var(--primary); margin-bottom: 16px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 14px; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 0.82rem; color: var(--text-sub); font-weight: 700; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(10, 15, 29, 0.65); color: white; font-size: 0.9rem; outline: none; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: #09090b; color: white; font-size: 0.9rem; outline: none; transition: 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
         .form-group textarea { resize: vertical; height: 75px; }
 
-        button.primary-btn { background: var(--accent-gradient); color: #070b14; border: none; padding: 12px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 0.92rem; box-shadow: 0 8px 24px var(--primary-glow); transition: 0.2s; }
+        button.primary-btn { background: var(--accent-gradient); color: #000; border: none; padding: 12px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 0.92rem; box-shadow: 0 8px 24px var(--primary-glow); transition: 0.2s; }
+        button.primary-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         
-        .search-filter-bar input { width: 100%; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(10, 15, 29, 0.65); color: white; font-size: 0.9rem; outline: none; margin-bottom: 14px; }
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 18px; border: 1px solid var(--glass-border); background: rgba(10, 15, 29, 0.45); }
+        .search-filter-bar input { width: 100%; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--glass-border); background: #09090b; color: white; font-size: 0.9rem; outline: none; margin-bottom: 14px; }
+        .search-filter-bar input:focus { border-color: var(--primary); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 18px; border: 1px solid var(--glass-border); background: #09090b; }
         table { width: 100%; border-collapse: collapse; font-size: 0.84rem; min-width: 900px; }
         th, td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--glass-border); white-space: nowrap; }
-        th { background: rgba(56, 189, 248, 0.08); color: var(--primary); font-weight: 800; }
+        th { background: rgba(234, 179, 8, 0.08); color: var(--primary); font-weight: 800; }
 
         .badge { display: inline-block; padding: 4px 11px; border-radius: 10px; font-weight: 800; font-size: 0.76rem; }
         .badge-delivered { background: var(--badge-delivered-bg); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-returned { background: var(--badge-returned-bg); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-returned { background: var(--badge-returned-bg); color: var(--primary); border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-inspect { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
         .badge-waiting { background: var(--badge-waiting-bg); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
 
-        .action-btn { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--primary); padding: 6px 11px; border-radius: 10px; cursor: pointer; font-size: 0.78rem; font-weight: 800; transition: 0.2s; }
+        .action-btn { background: #18181b; border: 1px solid var(--glass-border); color: #f8fafc; padding: 6px 11px; border-radius: 10px; cursor: pointer; font-size: 0.78rem; font-weight: 800; transition: 0.2s; }
+        .action-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); }
         .whatsapp-btn { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: #34d399; }
-        .print-btn { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; }
+        .whatsapp-btn:hover { background: var(--success); color: white; }
+        .print-btn { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: var(--primary); }
+        .print-btn:hover { background: var(--primary); color: #000; }
 
         .report-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: rgba(10, 15, 29, 0.65); border: 1px solid var(--glass-border); padding: 16px; border-radius: 16px; text-align: center; }
+        .stat-card { background: #09090b; border: 1px solid var(--glass-border); padding: 16px; border-radius: 16px; text-align: center; }
         .stat-card .val { font-size: 1.5rem; font-weight: 900; margin-top: 4px; }
         .stat-card .lbl { font-size: 0.8rem; color: var(--text-sub); font-weight: 700; }
-        .report-filters-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 16px; background: rgba(10, 15, 29, 0.5); padding: 14px; border-radius: 16px; border: 1px solid var(--glass-border); }
+        .report-filters-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 16px; background: #09090b; padding: 14px; border-radius: 16px; border: 1px solid var(--glass-border); }
         .filter-item { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 150px; }
         .filter-item label { font-size: 0.78rem; color: var(--text-sub); font-weight: 700; }
-        .filter-item input, .filter-item select { padding: 9px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--glass-border); color: #fff; outline: none; font-size: 0.85rem; }
+        .filter-item input, .filter-item select { padding: 9px 12px; border-radius: 10px; background: #18181b; border: 1px solid var(--glass-border); color: #fff; outline: none; font-size: 0.85rem; }
 
-        /* الشات معدل مع أيقونة المايك */
-        .chat-container-card { background: rgba(15, 23, 42, 0.98); border: 1px solid var(--primary); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .chat-msgs { height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(10, 15, 29, 0.6); border-radius: 14px; margin-bottom: 12px; }
-        .chat-msg-item { padding: 9px 13px; border-radius: 12px; max-width: 80%; line-height: 1.4; font-size: 0.85rem; }
-        .chat-msg-tech { background: rgba(16, 185, 129, 0.2); align-self: flex-end; color: #a7f3d0; text-align: right; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .chat-msg-client { background: rgba(56, 189, 248, 0.2); align-self: flex-start; color: #bae6fd; text-align: right; border: 1px solid rgba(56, 189, 248, 0.3); }
-        .chat-img-thumb { max-width: 180px; max-height: 180px; border-radius: 10px; margin-top: 5px; cursor: pointer; }
+        /* الشات الاحترافي الجديد */
+        .chat-container-card { background: #0f0f13; border: 1px solid var(--primary); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .chat-msgs { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #18181b; border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--glass-border); }
+        
+        .chat-msg-item { padding: 10px 14px; border-radius: 14px; max-width: 80%; line-height: 1.5; font-size: 0.85rem; display: flex; flex-direction: column; }
+        
+        /* رسائل الفني (أنت) - تظهر يمين */
+        .chat-msg-tech { background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); align-self: flex-start; color: #fef08a; text-align: start; border-top-right-radius: 2px; }
+        /* رسائل العميل - تظهر يسار */
+        .chat-msg-client { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); align-self: flex-end; color: #e2e8f0; text-align: start; border-top-left-radius: 2px; }
+        
+        .chat-img-thumb { max-width: 180px; max-height: 180px; border-radius: 10px; margin-top: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
         
         .chat-input-row { display: flex; gap: 6px; align-items: center; }
-        .chat-input-row input { flex: 1; padding: 11px 14px; border-radius: 12px; background: rgba(10, 15, 29, 0.7); border: 1px solid var(--glass-border); color: #fff; outline: none; }
-        .icon-action-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.15rem; transition: 0.2s; }
-        .icon-action-btn:hover { background: rgba(56, 189, 248, 0.2); color: var(--primary); }
-        .voice-btn.recording { background: #f43f5e; color: white; animation: pulse-avatar 1s infinite; }
+        .chat-input-row input { flex: 1; padding: 11px 14px; border-radius: 12px; background: #18181b; border: 1px solid var(--glass-border); color: #fff; outline: none; }
+        .chat-input-row input:focus { border-color: var(--primary); }
+        .icon-action-btn { background: #18181b; border: 1px solid var(--glass-border); color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.15rem; transition: 0.2s; }
+        .icon-action-btn:hover { background: rgba(234, 179, 8, 0.2); color: var(--primary); border-color: var(--primary); }
+        .voice-btn.recording { background: #ef4444; color: white; border-color: #ef4444; animation: pulse-record 1s infinite; }
+        @keyframes pulse-record { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
 
         /* المكالمات */
-        .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 11, 20, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
+        .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(9, 9, 11, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
-        .call-avatar { width: 110px; height: 110px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 20px; animation: pulse-avatar 1.5s infinite; }
-        @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); } 70% { box-shadow: 0 0 0 25px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+        .call-avatar { width: 110px; height: 110px; background: var(--accent-gradient); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 20px; animation: pulse-avatar 1.5s infinite; }
+        @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(234,179,8,0.7); } 70% { box-shadow: 0 0 0 25px rgba(234,179,8,0); } 100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); } }
         .call-actions { display: flex; gap: 20px; align-items: center; }
         .btn-call-action { width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 1.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-end-call { background: #f43f5e; color: white; }
+        .btn-end-call { background: #ef4444; color: white; }
         .btn-answer-call { background: #10b981; color: white; display: none; }
         .btn-mute-call { background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; }
         .btn-mute-call.muted { background: #f59e0b; }
 
-        .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        .lightbox-modal img { max-width: 90%; max-height: 80%; border-radius: 12px; }
+        .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .lightbox-modal img { max-width: 90%; max-height: 80%; border-radius: 12px; border: 2px solid var(--primary); }
 
-        .vip-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 20000; }
-        .vip-modal-box { background: #0f172a; border: 1px solid var(--primary); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px var(--primary-glow); width: 90%; max-width: 420px; border-radius: 24px; padding: 24px; text-align: center; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .vip-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 20000; }
+        .vip-modal-box { background: #18181b; border: 1px solid var(--primary); box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 20px var(--primary-glow); width: 90%; max-width: 420px; border-radius: 24px; padding: 24px; text-align: center; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .vip-modal-icon { font-size: 3rem; margin-bottom: 12px; }
         .vip-modal-title { font-size: 1.2rem; font-weight: 900; color: #fff; margin-bottom: 8px; }
-        .vip-modal-msg { font-size: 0.95rem; color: #cbd5e1; margin-bottom: 20px; line-height: 1.6; word-break: break-word; }
-        .vip-modal-btn { background: var(--accent-gradient); color: #070b14; border: none; padding: 10px 30px; border-radius: 12px; font-weight: 900; font-size: 0.95rem; cursor: pointer; }
+        .vip-modal-msg { font-size: 0.95rem; color: #a1a1aa; margin-bottom: 20px; line-height: 1.6; word-break: break-word; }
+        .vip-modal-btn { background: var(--accent-gradient); color: #000; border: none; padding: 10px 30px; border-radius: 12px; font-weight: 900; font-size: 0.95rem; cursor: pointer; }
 
         @media print {
             body { background: white !important; color: black !important; padding: 0 !important; }
@@ -209,7 +223,7 @@
         <div class="call-avatar">👤</div>
         <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 5px;" id="callTargetName">العميل</div>
         <div style="font-size: 1.4rem; color: #10b981; font-weight: 900; font-family: monospace; margin-bottom: 10px; display:none;" id="callTimerDisplay">00:00</div>
-        <div style="font-size: 1.1rem; color: #a0aec0; margin-bottom: 35px;" id="callStatusText">جاري الرنين...</div>
+        <div style="font-size: 1.1rem; color: #a1a1aa; margin-bottom: 35px;" id="callStatusText">جاري الرنين...</div>
         <div class="call-actions">
             <button class="btn-call-action btn-mute-call" id="btnMuteCall" onclick="toggleMute()" title="كتم المايك">🎤</button>
             <button class="btn-call-action btn-answer-call" id="btnAnswerCall" onclick="answerIncomingCall()">📞</button>
@@ -302,12 +316,12 @@
                 </div>
             </div>
             <div class="chat-msgs" id="chatMsgsDiv"></div>
-            <!-- تمت إزالة onmousedown لضمان الاستجابة مع إبقاء الكيبورد برمجيًا -->
+            <!-- إزالة التعطيل للحفاظ على تركيز الكيبورد دائمًا -->
             <div class="chat-input-row">
                 <input type="text" id="chatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsg()">
-                <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
-                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                <button class="primary-btn" onclick="sendTechMsg()">إرسال</button>
+                <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
+                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendTechMsg()">إرسال</button>
             </div>
         </div>
     </div>
@@ -561,7 +575,7 @@
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز تم تسليمه أو استرجاعه.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
                     statusCell = `
-                        <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#070b14; color:#fff; border:1px solid var(--glass-border); padding:6px 8px; border-radius:10px; font-size:0.75rem; cursor:pointer; font-weight:700;">
+                        <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#09090b; color:#fff; border:1px solid var(--glass-border); padding:6px 8px; border-radius:10px; font-size:0.75rem; cursor:pointer; font-weight:700;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
                             <option value="جاري الإصلاح" ${d.status==='جاري الإصلاح'?'selected':''}>⚙️ إصلاح</option>
                             <option value="بانتظار موافقة العميل على التكلفة" ${d.status.includes('بانتظار')?'selected':''}>⏳ انتظار موافقة</option>
@@ -570,14 +584,14 @@
                             <option value="مسترجع" ${d.status.includes('مسترجع')?'selected':''}>🔄 مسترجع</option>
                         </select>
                     `;
-                    timeCell = `<input type="datetime-local" value="${d.expected_time || ''}" style="padding:4px; border-radius:8px; background:#070b14; color:#fff; border:1px solid var(--glass-border); font-size:0.72rem;" onchange="updateExpected('${d.id}', this.value)">`;
+                    timeCell = `<input type="datetime-local" value="${d.expected_time || ''}" style="padding:4px; border-radius:8px; background:#09090b; color:#fff; border:1px solid var(--glass-border); font-size:0.72rem;" onchange="updateExpected('${d.id}', this.value)">`;
                     faultCell = `
                         <div style="display:flex; gap:4px; justify-content:center; align-items:center;">
-                            <input type="text" id="fault-${d.id}" value="${d.new_fault || ''}" placeholder="عطل جديد..." style="width:75px; padding:5px 7px; border-radius:8px; background:#070b14; color:#fff; border:1px solid var(--glass-border); font-size:0.75rem;">
+                            <input type="text" id="fault-${d.id}" value="${d.new_fault || ''}" placeholder="عطل جديد..." style="width:75px; padding:5px 7px; border-radius:8px; background:#09090b; color:#fff; border:1px solid var(--glass-border); font-size:0.75rem;">
                             <button onclick="sendFault('${d.id}')" style="background:#10b981; color:#fff; border:none; padding:5px 9px; border-radius:8px; cursor:pointer; font-weight:800; font-size:0.72rem;">إرسال</button>
                         </div>
                     `;
-                    costCell = `<input type="text" value="${d.cost || 0}" style="width:58px; text-align:center; padding:5px; border-radius:8px; background:#070b14; color:#34d399; border:1px solid var(--glass-border); font-size:0.8rem; font-weight:800;" onchange="updateCost('${d.id}', this.value)">`;
+                    costCell = `<input type="text" value="${d.cost || 0}" style="width:58px; text-align:center; padding:5px; border-radius:8px; background:#09090b; color:#34d399; border:1px solid var(--glass-border); font-size:0.8rem; font-weight:800;" onchange="updateCost('${d.id}', this.value)">`;
                     chatBtn = `<button class="action-btn" onclick="openChat('${d.id}')">💬 ${unread ? '🔴' : ''} شات</button>`;
                 }
 
@@ -669,13 +683,12 @@
         }
 
         // ==============================================
-        // الشات اللحظي (صاروخي) Optimistic UI
+        // الشات اللحظي (Optimistic UI - بدون تداخل)
         // ==============================================
         let isTechSending = false;
         
         function closeChat() {
             document.getElementById('chatBoxContainer').style.display = 'none';
-            if (chatPollInterval) clearInterval(chatPollInterval);
             activeChatId = null;
         }
 
@@ -687,9 +700,6 @@
             activeChatId = String(id);
             document.getElementById('chatBoxContainer').style.display = 'block';
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
-            
-            if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncChatData(id), 2000); // تحديث قوي ولايف
             syncChatData(id);
         }
 
@@ -697,7 +707,9 @@
             let { data } = await _supabase.from('devices').select('chat').eq('id', id).single();
             if(data && data.chat) {
                 let d = devices.find(x => String(x.id) === String(id));
-                if(d) { d.chat = data.chat; renderChatMsgs(data.chat); }
+                if(d && data.chat.length >= (d.chat || []).length) { 
+                    d.chat = data.chat; renderChatMsgs(data.chat); 
+                }
             }
         }
 
@@ -714,19 +726,19 @@
                 let readInfo = '';
                 if(isTech) {
                     let t = m.readTime ? ` (${m.readTime})` : '';
-                    readInfo = m.isRead ? `<span style="color:#00f2fe; font-size:0.65rem;">✓✓ مقروءة${t}</span>` : `<span style="color:#a0aec0; font-size:0.65rem;">✓ أُرسلت</span>`;
+                    readInfo = m.isRead ? `<span style="color:var(--primary); font-size:0.65rem; font-weight:800;">✓✓ مقروءة${t}</span>` : `<span style="color:var(--text-sub); font-size:0.65rem;">✓ أُرسلت</span>`;
                 }
 
                 let content = '';
-                if (m.isImage) content = `<img src="${m.text}" class="chat-img-thumb" onclick="openLightbox('${m.text}')" title="اضغط للتكبير">`;
-                else if (m.isVoice) content = `<audio controls src="${m.text}" style="height:32px; width:190px;"></audio>`;
-                else content = `<div>${m.text}</div>`;
+                if (m.isImage) content = `<img src="${m.text}" class="chat-img-thumb" onclick="openLightbox('${m.text}')">`;
+                else if (m.isVoice) content = `<audio controls src="${m.text}" style="height:35px; width:200px; margin-top:5px; outline:none;"></audio>`;
+                else content = `<div style="font-weight:700;">${m.text}</div>`;
 
                 box.innerHTML += `
                     <div class="chat-msg-item ${isTech ? 'chat-msg-tech' : 'chat-msg-client'}">
-                        <div style="font-size:0.75rem; font-weight:bold;">${isTech ? '🛠️ أنت:' : '👤 العميل:'}</div>
+                        <div style="font-size:0.75rem; font-weight:900; margin-bottom:5px;">${isTech ? '🛠️ أنت:' : '👤 العميل:'}</div>
                         ${content}
-                        <div style="font-size:0.6rem; display:flex; justify-content:space-between; margin-top:3px; opacity:0.8;">
+                        <div style="font-size:0.65rem; display:flex; justify-content:space-between; margin-top:5px; opacity:0.9;">
                             <span>${m.time}</span> ${readInfo}
                         </div>
                     </div>
@@ -748,7 +760,7 @@
             if(changed) await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
         }
 
-        async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
+        function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
             if(!text || !activeChatId || isTechSending) return;
@@ -756,29 +768,20 @@
             let d = devices.find(x => String(x.id) === String(activeChatId));
             if(!d) return;
 
-            // إبقاء الكيبورد مفتوحة وتنظيف الخانة للإرسال الصاروخي 🚀
-            if(!imageBase64 && !voiceBase64) {
-                input.value = '';
-                input.focus(); 
-            }
+            if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); }
 
             let newMsg = { sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // إضافة فورية للواجهة بدون انتظار النت
-            let currentChat = d.chat ? [...d.chat] : [];
-            currentChat.push(newMsg);
-            d.chat = currentChat;
-            renderChatMsgs(currentChat);
+            let localChat = d.chat ? [...d.chat] : [];
+            localChat.push(newMsg);
+            d.chat = localChat;
+            renderChatMsgs(localChat);
 
             isTechSending = true;
-            
-            // رفع البيانات في الخلفية
             _supabase.from('devices').select('chat').eq('id', activeChatId).single().then(({data}) => {
                 let dbChat = (data && data.chat) ? [...data.chat] : [];
                 dbChat.push(newMsg);
-                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId).then(() => {
-                    isTechSending = false;
-                });
+                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId).then(() => { isTechSending = false; });
             });
         }
 
@@ -862,7 +865,7 @@
         }
 
         // ==============================================
-        // المكالمات الحية
+        // نظام المكالمات الحية
         // ==============================================
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
 
