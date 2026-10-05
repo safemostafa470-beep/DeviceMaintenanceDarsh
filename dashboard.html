@@ -84,7 +84,7 @@
         .filter-item label { font-size: 0.78rem; color: var(--text-sub); font-weight: 700; }
         .filter-item input, .filter-item select { padding: 9px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--glass-border); color: #fff; outline: none; font-size: 0.85rem; }
 
-        /* الشات */
+        /* الشات معدل مع أيقونة المايك */
         .chat-container-card { background: rgba(15, 23, 42, 0.98); border: 1px solid var(--primary); border-radius: 20px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .chat-msgs { height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(10, 15, 29, 0.6); border-radius: 14px; margin-bottom: 12px; }
         .chat-msg-item { padding: 9px 13px; border-radius: 12px; max-width: 80%; line-height: 1.4; font-size: 0.85rem; }
@@ -302,12 +302,12 @@
                 </div>
             </div>
             <div class="chat-msgs" id="chatMsgsDiv"></div>
-            <!-- تم إضافة onmousedown="event.preventDefault();" لجميع الأزرار لمنع قفل الكيبورد -->
+            <!-- تمت إزالة onmousedown لضمان الاستجابة مع إبقاء الكيبورد برمجيًا -->
             <div class="chat-input-row">
                 <input type="text" id="chatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsg()">
-                <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
-                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendTechMsg()">إرسال</button>
+                <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
+                <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                <button class="primary-btn" onclick="sendTechMsg()">إرسال</button>
             </div>
         </div>
     </div>
@@ -669,7 +669,7 @@
         }
 
         // ==============================================
-        // نظام الشات اللحظي (استجابة فورية وعدم قفل الكيبورد)
+        // الشات اللحظي (صاروخي) Optimistic UI
         // ==============================================
         let isTechSending = false;
         
@@ -689,7 +689,7 @@
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             
             if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncChatData(id), 2000);
+            chatPollInterval = setInterval(() => syncChatData(id), 2000); // تحديث قوي ولايف
             syncChatData(id);
         }
 
@@ -753,25 +753,33 @@
             let text = imageBase64 || voiceBase64 || input.value.trim();
             if(!text || !activeChatId || isTechSending) return;
 
-            isTechSending = true;
+            let d = devices.find(x => String(x.id) === String(activeChatId));
+            if(!d) return;
+
+            // إبقاء الكيبورد مفتوحة وتنظيف الخانة للإرسال الصاروخي 🚀
             if(!imageBase64 && !voiceBase64) {
-                input.value = ''; // تفريغ فوري لسرعة الاستجابة
-                input.focus(); // إبقاء التركيز لمنع اختفاء الكيبورد
+                input.value = '';
+                input.focus(); 
             }
 
-            let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
-            let currentChat = (data && data.chat) ? [...data.chat] : [];
+            let newMsg = { sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            currentChat.push({ sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false });
-            
-            let { error } = await _supabase.from('devices').update({ chat: currentChat }).eq('id', activeChatId);
-            isTechSending = false;
+            // إضافة فورية للواجهة بدون انتظار النت
+            let currentChat = d.chat ? [...d.chat] : [];
+            currentChat.push(newMsg);
+            d.chat = currentChat;
+            renderChatMsgs(currentChat);
 
-            if(!error) {
-                let d = devices.find(x => String(x.id) === String(activeChatId));
-                if(d) d.chat = currentChat;
-                renderChatMsgs(currentChat);
-            }
+            isTechSending = true;
+            
+            // رفع البيانات في الخلفية
+            _supabase.from('devices').select('chat').eq('id', activeChatId).single().then(({data}) => {
+                let dbChat = (data && data.chat) ? [...data.chat] : [];
+                dbChat.push(newMsg);
+                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId).then(() => {
+                    isTechSending = false;
+                });
+            });
         }
 
         async function toggleVoiceRecording() {
@@ -791,7 +799,7 @@
                         }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(); // تسجيل قطعة واحدة للحفاظ على جودة ونقاء الملف
+                    mediaRecorder.start(); 
                     isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert('يرجى السماح بالمايكروفون لتسجيل الصوت.'); }
             } else {
@@ -854,9 +862,8 @@
         }
 
         // ==============================================
-        // نظام المكالمات الصوتية المشفر السليم
+        // المكالمات الحية
         // ==============================================
-        // تشفير الحروف العربية في الـ ID عشان متمسحش في الـ PeerJS
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
 
         function startCallTimer() {

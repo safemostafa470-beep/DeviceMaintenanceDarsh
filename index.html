@@ -209,12 +209,12 @@
                         <button class="messenger-call-btn" onclick="startAudioCall()" title="اتصال مباشر بالمايك">📞</button>
                     </div>
                     <div class="chat-msgs" id="clientChatMsgs"></div>
-                    <!-- تم إضافة onmousedown="event.preventDefault();" لجميع الأزرار لمنع قفل الكيبورد -->
+                    <!-- تمت إزالة onmousedown لضمان الاستجابة مع إبقاء الكيبورد برمجيًا -->
                     <div class="chat-input-row">
                         <input type="text" id="clientChatInput" placeholder="اكتب استفسارك..." onkeydown="if(event.key==='Enter') sendClientMsg()">
-                        <button class="icon-action-btn" onmousedown="event.preventDefault();" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
-                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onmousedown="event.preventDefault();" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                        <button class="primary-btn" onmousedown="event.preventDefault();" onclick="sendClientMsg()" data-i18n="sendBtn">إرسال</button>
+                        <button class="icon-action-btn" onclick="document.getElementById('chatImageInput').click()" title="إرسال صورة">🖼️</button>
+                        <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
+                        <button class="primary-btn" onclick="sendClientMsg()" data-i18n="sendBtn">إرسال</button>
                     </div>
                 </div>
             </div>
@@ -467,30 +467,37 @@
         }
 
         let isClientSending = false;
+
         async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             if(!activeDevice) return;
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
             if(!text || isClientSending) return;
             
-            isClientSending = true;
+            // إبقاء الكيبورد مفتوحة وتنظيف الخانة فوراً للإرسال الصاروخي 🚀
             if(!voiceBase64 && !imageBase64) {
-                input.value = ''; // تفريغ فوري لسرعة الاستجابة
-                input.focus(); // إبقاء التركيز لمنع اختفاء الكيبورد
+                input.value = ''; 
+                input.focus(); 
             }
             
-            let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
-            let currentChat = (data && data.chat) ? [...data.chat] : [];
+            let newMsg = { sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            currentChat.push({ sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), isRead: false });
-            
-            let { error } = await _supabase.from('devices').update({ chat: currentChat }).eq('id', activeDevice.id);
-            isClientSending = false;
+            // إضافة فورية للواجهة بدون انتظار النت
+            let currentChat = activeDevice.chat ? [...activeDevice.chat] : [];
+            currentChat.push(newMsg);
+            activeDevice.chat = currentChat;
+            renderChat(currentChat);
 
-            if(!error) {
-                activeDevice.chat = currentChat;
-                renderChat(currentChat);
-            }
+            isClientSending = true;
+            
+            // رفع البيانات في الخلفية
+            _supabase.from('devices').select('chat').eq('id', activeDevice.id).single().then(({data}) => {
+                let dbChat = (data && data.chat) ? [...data.chat] : [];
+                dbChat.push(newMsg);
+                _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id).then(() => {
+                    isClientSending = false;
+                });
+            });
         }
 
         async function toggleVoiceRecording() {
@@ -505,7 +512,7 @@
                         if (audioBlob.size > 0) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(reader.result, null); }; }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(); // تسجيل ككتلة واحدة للحفاظ على جودة ونقاء الملف
+                    mediaRecorder.start(); // تسجيل ككتلة واحدة للحفاظ على جودة الملف
                     isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); }
             } else {
