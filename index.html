@@ -142,7 +142,7 @@
             <button class="btn-call-action btn-answer-call" id="btnAnswerCall" onclick="answerIncomingCall()">📞</button>
             <button class="btn-call-action btn-end-call" onclick="endCurrentCall()">❌</button>
         </div>
-        <audio id="remoteAudio" autoplay></audio>
+        <audio id="remoteAudio" autoplay playsinline></audio>
     </div>
 
     <div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox()">
@@ -268,7 +268,7 @@
         let callSeconds = 0;
         let isMuted = false;
 
-        let mediaRecorder = null; let audioChunks = []; let isRecording = false; let audioMimeType = 'audio/webm';
+        let mediaRecorder = null; let audioChunks = []; let isRecording = false;
         let audioCtx = null; let ringInterval = null;
 
         function formatSimpleDate(isoString) {
@@ -371,9 +371,8 @@
             initVoicePeer(activeDevice.tracking_number);
             attachRealtimeListener(activeDevice.id);
             
-            // سحب تلقائي قوي كل ثانيتين لضمان اللايف للشات
             if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncClientChat(), 2000);
+            chatPollInterval = setInterval(() => syncClientChat(), 2000); // تحديث قوي ولايف كل ثانيتين
             syncClientChat();
         }
 
@@ -493,15 +492,15 @@
             if(!isRecording) {
                 try {
                     let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    audioMimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
-                    mediaRecorder = new MediaRecorder(stream, audioMimeType ? { mimeType: audioMimeType } : {}); audioChunks = [];
-                    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+                    mediaRecorder = new MediaRecorder(stream); audioChunks = [];
+                    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                     mediaRecorder.onstop = () => {
-                        let audioBlob = new Blob(audioChunks, { type: audioMimeType || 'audio/webm' });
-                        if (audioBlob.size > 600) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(reader.result, null); }; }
+                        let audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        if (audioBlob.size > 0) { let reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = () => { sendClientMsg(reader.result, null); }; }
                         stream.getTracks().forEach(t => t.stop());
                     };
-                    mediaRecorder.start(250); isRecording = true; btn.classList.add('recording');
+                    mediaRecorder.start(); // تسجيل ككتلة واحدة للحفاظ على جودة الملف
+                    isRecording = true; btn.classList.add('recording');
                 } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون لتسجيل الصوت.' : 'Please allow microphone access.'); }
             } else {
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
@@ -510,9 +509,9 @@
         }
 
         // ==============================================
-        // المكالمات الحية
+        // نظام المكالمات الحية المشفر السليم
         // ==============================================
-        function sanitizePeerId(id) { return (id || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_'); }
+        function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
 
         function startCallTimer() {
             callSeconds = 0; if (callTimerInterval) clearInterval(callTimerInterval);
@@ -535,7 +534,8 @@
             myPeer = new Peer('alhawary_client_' + sanitizePeerId(track));
             myPeer.on('call', call => {
                 currentCall = call;
-                let techName = call.peer.replace('alhawary_tech_', '');
+                let techNameRaw = call.peer.replace('alhawary_tech_', '');
+                let techName = decodeURIComponent(techNameRaw.replace(/_/g, '%')); // فك تشفير الاسم
                 document.getElementById('callScreen').classList.add('active');
                 document.getElementById('callTargetName').innerText = (I18N[currentLang].techLabel || 'المهندس: ') + ' ' + techName;
                 document.getElementById('callStatusText').innerText = I18N[currentLang].callIncoming;
