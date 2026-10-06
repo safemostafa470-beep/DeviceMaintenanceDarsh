@@ -310,7 +310,7 @@
         let devices = [];
         let currentTab = 'add';
         let activeChatId = null;
-        let realtimeSubscription = null;
+        let chatPollInterval = null;
 
         let myPeer = null;
         let currentCall = null;
@@ -325,7 +325,7 @@
         let audioCtx = null;
         let ringInterval = null;
 
-        // --- نظام طابور الرسائل (Message Queue) السريع ---
+        // --- طابور الرسائل السريع ---
         let messageQueue = [];
         let isProcessingQueue = false;
 
@@ -340,7 +340,7 @@
                     let dbChat = (data && data.chat) ? [...data.chat] : [];
                     dbChat.push(msg);
                     await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
-                    messageQueue.shift(); // يحذف الرسالة من الطابور بعد نجاح الإرسال
+                    messageQueue.shift(); 
                 } catch(e) {
                     console.error("Queue error:", e);
                     break;
@@ -461,7 +461,36 @@
             initTechVoice(currentTech);
             
             await fetchDevicesInitial();
-            setupRealtimeListener();
+
+            // فحص الجدول بالكامل كل 5 ثواني في الخلفية
+            setInterval(async () => {
+                let { data } = await _supabase.from('devices').select('id, status, expected_time, cost, new_fault, tracking_number, customer_name, chat').eq('technician', currentTech);
+                if(data) {
+                    let shouldRender = false;
+                    data.forEach(dbDevice => {
+                        let localDev = devices.find(d => d.id === dbDevice.id);
+                        if(localDev) {
+                            if(localDev.status !== dbDevice.status || localDev.cost !== dbDevice.cost || localDev.new_fault !== dbDevice.new_fault) {
+                                localDev.status = dbDevice.status; localDev.cost = dbDevice.cost; localDev.new_fault = dbDevice.new_fault;
+                                shouldRender = true;
+                            }
+                            if (dbDevice.chat && (dbDevice.chat.length > (localDev.chat||[]).length)) {
+                                localDev.chat = dbDevice.chat;
+                                shouldRender = true;
+                                let lastMsg = dbDevice.chat[dbDevice.chat.length - 1];
+                                if (lastMsg.sender === 'client') {
+                                    playMessagePing();
+                                    showDesktopNotification(`رسالة من: ${dbDevice.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
+                                }
+                            }
+                        } else {
+                            devices.unshift(dbDevice);
+                            shouldRender = true;
+                        }
+                    });
+                    if(shouldRender) refreshActiveView();
+                }
+            }, 5000);
 
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
@@ -475,43 +504,35 @@
             if(data) { devices = data; refreshActiveView(); }
         }
 
-        function setupRealtimeListener() {
-            if (realtimeSubscription) _supabase.removeChannel(realtimeSubscription);
-            
-            realtimeSubscription = _supabase.channel('tech-devices')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `technician=eq.${currentTech}` }, payload => {
-                    if (payload.eventType === 'INSERT') {
-                        devices.unshift(payload.new);
-                        refreshActiveView();
-                    } 
-                    else if (payload.eventType === 'UPDATE') {
-                        let updated = payload.new;
-                        let idx = devices.findIndex(d => d.id === updated.id);
-                        if (idx !== -1) {
-                            let oldData = devices[idx];
-                            devices[idx] = updated;
-                            
-                            if (updated.chat && updated.chat.length > (oldData.chat || []).length) {
-                                let lastMsg = updated.chat[updated.chat.length - 1];
-                                if (lastMsg.sender === 'client') {
-                                    playMessagePing();
-                                    showDesktopNotification(`رسالة من: ${updated.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
-                                }
-                            }
-                            
-                            if (activeChatId == updated.id) {
-                                renderChatMsgs(updated.chat);
-                            }
-                        } else {
-                            devices.unshift(updated);
-                        }
-                        refreshActiveView();
-                    } 
-                    else if (payload.eventType === 'DELETE') {
-                        devices = devices.filter(d => d.id !== payload.old.id);
-                        refreshActiveView();
+        // ==============================================
+        // المزامنة الذكية للمحادثة الخاصة بالفني
+        // ==============================================
+        async function smartSyncTechChat() {
+            if(!activeChatId || isProcessingQueue) return;
+            let d = devices.find(x => String(x.id) === String(activeChatId)); if(!d) return;
+
+            let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+            if(data && data.chat) {
+                let dbChat = data.chat || [];
+                let localChat = d.chat || [];
+                
+                let needsUpdate = false;
+                if (dbChat.length > localChat.length) needsUpdate = true;
+                else {
+                    for(let i=0; i<localChat.length; i++) {
+                        if(dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) needsUpdate = true;
                     }
-                }).subscribe();
+                }
+                
+                if (needsUpdate) {
+                    if (dbChat.length > localChat.length) {
+                        let lastMsg = dbChat[dbChat.length - 1];
+                        if (lastMsg.sender === 'client') playMessagePing();
+                    }
+                    d.chat = dbChat;
+                    renderChatMsgs(dbChat);
+                }
+            }
         }
 
         function refreshActiveView() {
@@ -779,6 +800,7 @@
         function closeChat(skipHistory = false) { 
             document.getElementById('chatBoxContainer').style.display = 'none'; 
             activeChatId = null; 
+            if(chatPollInterval) clearInterval(chatPollInterval);
             updateURLState(skipHistory);
         }
 
@@ -791,6 +813,12 @@
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             
             renderChatMsgs(d.chat);
+            
+            // تفعيل المزامنة الذكية للمحادثة
+            if(chatPollInterval) clearInterval(chatPollInterval);
+            chatPollInterval = setInterval(smartSyncTechChat, 2000);
+            smartSyncTechChat();
+            
             updateURLState(skipHistory);
         }
 
@@ -862,7 +890,6 @@
             renderChatMsgs(localChat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // الدفع في الطابور لمعالجة الإرسال بدون توقيفك عن الكتابة
             messageQueue.push(newMsg);
             processMessageQueue();
         }
@@ -918,7 +945,6 @@
                     stopCallRingtone(); document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
                     let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
                     
-                    // السحر هنا لإغلاق المكالمة للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
@@ -936,7 +962,6 @@
                     document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
                     let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
                     
-                    // السحر هنا لإغلاق المكالمة للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
@@ -954,7 +979,6 @@
         function endCurrentCall() {
             stopCallRingtone(); stopCallTimer(); if(currentCall) { currentCall.close(); currentCall = null; }
             
-            // وقف بث المايكروفون بشكل قطعي لتنبيه الطرف الآخر
             if(localStream) { 
                 localStream.getTracks().forEach(t => t.stop()); 
                 localStream = null; 

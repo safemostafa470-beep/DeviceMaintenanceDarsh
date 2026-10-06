@@ -283,7 +283,7 @@
         let currentCountry = localStorage.getItem('app_country') || 'EG'; 
         let currentCurrency = 'ج.م';
         let activeDevice = null;
-        let realtimeSubscription = null;
+        let chatPollInterval = null;
 
         let myPeer = null; 
         let currentCall = null; 
@@ -310,10 +310,10 @@
                     let dbChat = (data && data.chat) ? [...data.chat] : [];
                     dbChat.push(msg);
                     await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-                    messageQueue.shift(); // يحذف الرسالة من الطابور فقط بعد نجاح الإرسال
+                    messageQueue.shift(); 
                 } catch(e) {
                     console.error("Queue error:", e);
-                    break; // يوقف المعالجة مؤقتاً ليعيد المحاولة
+                    break;
                 }
             }
             isProcessingQueue = false;
@@ -425,7 +425,7 @@
 
         function showDeliveryOrReturnScreen(d) {
             document.getElementById('resultSection').style.display = 'none';
-            detachRealtimeListener();
+            if(chatPollInterval) clearInterval(chatPollInterval);
 
             if (d.status.includes('تم تسليم')) {
                 document.getElementById('delivTrack').innerText = d.tracking_number; document.getElementById('delivName').innerText = d.customer_name;
@@ -456,7 +456,8 @@
             deliveredCard.style.display = 'none'; returnedCard.style.display = 'none'; resultSection.style.display = 'none';
             if (error || !data || data.length === 0) { 
                 msgBox.innerHTML = I18N[currentLang].noResult; msgBox.style.display = 'block'; 
-                activeDevice = null; detachRealtimeListener(); 
+                activeDevice = null; 
+                if(chatPollInterval) clearInterval(chatPollInterval);
                 return; 
             }
 
@@ -473,50 +474,47 @@
             updateUI(activeDevice);
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
-            attachRealtimeListener(activeDevice.id);
             
-            await syncClientChatOnce();
+            // تفعيل المزامنة الذكية للمحادثة (بديل Realtime)
+            if(chatPollInterval) clearInterval(chatPollInterval);
+            chatPollInterval = setInterval(smartSyncClientChat, 2000);
+            smartSyncClientChat();
         }
 
-        async function syncClientChatOnce() {
-            if(!activeDevice) return;
-            let { data } = await _supabase.from('devices').select('chat, status').eq('id', activeDevice.id).single();
+        // ==============================================
+        // المزامنة الذكية (Smart Sync) بديلاً عن الـ Realtime
+        // ==============================================
+        async function smartSyncClientChat() {
+            if(!activeDevice || isProcessingQueue) return;
+            let { data } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
             if(data) {
-                if (data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { 
-                    activeDevice.status = data.status; showDeliveryOrReturnScreen(activeDevice); return; 
+                // تحديث الحالة العامة
+                if(data.status !== activeDevice.status || data.cost !== activeDevice.cost || data.new_fault !== activeDevice.new_fault) {
+                    activeDevice.status = data.status; activeDevice.cost = data.cost; activeDevice.new_fault = data.new_fault; activeDevice.expected_time = data.expected_time;
+                    if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { showDeliveryOrReturnScreen(activeDevice); return; }
+                    updateUI(activeDevice);
                 }
-                activeDevice.chat = data.chat || [];
-                renderChat(activeDevice.chat);
-            }
-        }
 
-        function detachRealtimeListener() { if (realtimeSubscription) { _supabase.removeChannel(realtimeSubscription); realtimeSubscription = null; } }
-        
-        function attachRealtimeListener(deviceId) {
-            detachRealtimeListener();
-            realtimeSubscription = _supabase.channel(`device-realtime-${deviceId}`)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'devices', filter: `id=eq.${deviceId}` }, payload => {
-                    let updated = payload.new; if(!updated) return;
-                    
-                    if(updated.status.includes('تم تسليم') || updated.status.includes('مسترجع')) { 
-                        activeDevice = updated; showDeliveryOrReturnScreen(updated); 
-                        return;
-                    } 
-                    
-                    let oldChat = activeDevice ? (activeDevice.chat || []) : []; 
-                    let newChat = updated.chat || [];
-                    
-                    if (newChat.length > oldChat.length) {
-                        let lastMsg = newChat[newChat.length - 1];
-                        if (lastMsg.sender === 'tech') { 
-                            playMessagePing(); 
-                            showDesktopNotification("رسالة جديدة من المهندس", lastMsg.isImage ? "أرسل لك صورة" : (lastMsg.isVoice ? "رسالة صوتية" : lastMsg.text)); 
-                        }
+                let dbChat = data.chat || [];
+                let localChat = activeDevice.chat || [];
+                
+                let needsUpdate = false;
+                if (dbChat.length > localChat.length) needsUpdate = true;
+                else {
+                    for(let i=0; i<localChat.length; i++) {
+                        if(dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) needsUpdate = true;
                     }
-                    
-                    activeDevice = updated; 
-                    updateUI(updated);
-                }).subscribe();
+                }
+                
+                if (needsUpdate) {
+                    if (dbChat.length > localChat.length) {
+                        let lastMsg = dbChat[dbChat.length - 1];
+                        if (lastMsg.sender === 'tech') playMessagePing();
+                    }
+                    activeDevice.chat = dbChat;
+                    renderChat(dbChat);
+                }
+            }
         }
 
         function updateUI(d) {
@@ -612,7 +610,7 @@
             renderChat(tempChat);
             setTimeout(scrollToBottomChat, 50);
 
-            // دفع الرسالة في الطابور لمعالجتها بهدوء في الخلفية
+            // الدفع في الطابور
             messageQueue.push(newMsg);
             processMessageQueue();
         }
@@ -696,7 +694,7 @@
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
                     
-                    // السحر هنا لإغلاق المكالمة للطرفين فوراً عند الانقطاع
+                    // إغلاق المكالمة تلقائياً للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
@@ -720,7 +718,7 @@
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
                     
-                    // السحر هنا لإغلاق المكالمة للطرفين فوراً عند الانقطاع
+                    // إغلاق المكالمة تلقائياً للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
@@ -746,7 +744,6 @@
             stopCallRingtone(); stopCallTimer();
             if(currentCall) { currentCall.close(); currentCall = null; }
             
-            // وقف بث المايكروفون بشكل قطعي لتنبيه الطرف الآخر
             if(localStream) { 
                 localStream.getTracks().forEach(t => t.stop()); 
                 localStream = null; 
