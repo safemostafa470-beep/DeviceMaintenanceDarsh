@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- إعداد الـ Viewport ليتجاوب بشكل ممتاز مع الكيبورد في الموبايل -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>لوحة تحكم الفني الاحترافية - الهوارى VIP</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -27,7 +28,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-deep); color: var(--text-main); min-height: 100vh; padding: 15px 12px; font-size: 15px; }
+        body { background: var(--bg-deep); color: var(--text-main); min-height: 100vh; padding: 15px 12px; font-size: 15px; overscroll-behavior: none; }
 
         .notif-banner { width: 100%; background: var(--primary); color: #000; padding: 10px 16px; font-size: 0.95rem; font-weight: 800; display: none; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .notif-btn { background: #000; color: var(--primary); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 900; cursor: pointer; font-size: 0.85rem; }
@@ -69,6 +70,7 @@
         .badge-delivered { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
         .badge-returned { background: rgba(245, 158, 11, 0.2); color: var(--primary); border: 1px solid var(--primary); }
         .badge-inspect { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+        .badge-waiting { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid #f59e0b; }
 
         .action-btn { background: #1e293b; border: 1px solid var(--glass-border); color: #f8fafc; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 800; transition: 0.2s; }
         .action-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); }
@@ -86,12 +88,13 @@
         .filter-item label { font-size: 0.85rem; color: var(--text-sub); font-weight: 800; }
         .filter-item input, .filter-item select { padding: 10px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; outline: none; font-size: 16px; font-weight: 700; }
 
-        .chat-container-card { background: #0b1120; border: 2px solid var(--primary); border-radius: 20px; padding: 18px; margin-top: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
+        /* الشات الواضح للموبايل وتجاوب لوحة المفاتيح */
+        .chat-container-card { background: #0b1120; border: 2px solid var(--primary); border-radius: 20px; padding: 14px; margin-top: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); transition: all 0.3s ease; }
         .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--glass-border); padding-bottom: 12px; }
         .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; box-shadow: 0 4px 15px rgba(16,185,129,0.4); animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); } 70% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 
-        .chat-msgs { height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #1e293b; border-radius: 14px; margin-bottom: 14px; border: 2px solid var(--glass-border); }
+        .chat-msgs { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #1e293b; border-radius: 14px; margin-bottom: 14px; border: 2px solid var(--glass-border); scroll-behavior: smooth; }
         .chat-msg-item { padding: 12px 16px; border-radius: 14px; max-width: 82%; line-height: 1.6; font-size: 0.95rem; font-weight: 700; display: flex; flex-direction: column; }
         
         .chat-msg-tech { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); align-self: flex-start; color: #fde68a; text-align: start; border-top-right-radius: 4px; }
@@ -99,11 +102,14 @@
         
         .chat-img-thumb { max-width: 200px; max-height: 200px; border-radius: 12px; margin-top: 6px; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
         
-        .chat-input-row { display: flex; gap: 8px; align-items: center; }
-        .chat-input-row input { flex: 1; padding: 14px 16px; border-radius: 14px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; font-size: 16px; font-weight: 700; outline: none; }
+        /* التعديل الجذري لمنع خروج الأزرار عن الشاشة */
+        .chat-input-row { display: flex; gap: 6px; align-items: center; width: 100%; }
+        .chat-input-row input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; font-size: 15px; font-weight: 700; outline: none; transition: 0.2s; }
         .chat-input-row input:focus { border-color: var(--primary); }
-        .icon-action-btn { background: #1e293b; border: 2px solid var(--glass-border); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; transition: 0.2s; }
+        .icon-action-btn { background: #1e293b; border: 2px solid var(--glass-border); color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; transition: 0.2s; flex-shrink: 0; }
         .icon-action-btn:hover { background: rgba(245, 158, 11, 0.2); color: var(--primary); border-color: var(--primary); }
+        .chat-input-row .primary-btn { flex-shrink: 0; white-space: nowrap; width: auto !important; padding: 12px 16px !important; margin: 0; }
+        
         .voice-btn.recording { background: #ef4444; color: white; border-color: #ef4444; animation: pulse-record 1s infinite; }
 
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
@@ -127,7 +133,7 @@
         .vip-modal-msg { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 24px; line-height: 1.6; font-weight: 700; }
         .vip-modal-btn { background: var(--accent-gradient); color: #000; border: none; padding: 12px 35px; border-radius: 14px; font-weight: 900; font-size: 1.05rem; cursor: pointer; }
 
-        /* ستايل الطباعة القوي */
+        /* ستايل الطباعة القوي والمعزول */
         @media print {
             body > *:not(#printAreaWrapper) { display: none !important; }
             #printAreaWrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
@@ -137,6 +143,7 @@
 </head>
 <body>
 
+    <!-- حاوية الطباعة المعزولة -->
     <div id="printAreaWrapper" style="display:none; background:#fff; color:#000; padding:20px; width:100%; min-height:100vh;"></div>
 
     <div id="vipModal" class="vip-modal-overlay">
@@ -191,11 +198,11 @@
         </div>
 
         <div class="nav-buttons">
-            <button class="nav-btn active" onclick="switchMainTab('add', this)">➕ إضافة جهاز</button>
-            <button class="nav-btn" onclick="switchMainTab('current', this)">⚙️ قيد الفحص والصيانة</button>
-            <button class="nav-btn" onclick="switchMainTab('delivered', this)">📦 المسلمة</button>
-            <button class="nav-btn" onclick="switchMainTab('returned', this)">🔄 المسترجعة</button>
-            <button class="nav-btn" onclick="switchMainTab('reports', this)">📊 التقارير الشاملة</button>
+            <button class="nav-btn active" id="btn-add" onclick="switchMainTab('add', this)">➕ إضافة جهاز</button>
+            <button class="nav-btn" id="btn-current" onclick="switchMainTab('current', this)">⚙️ قيد الفحص والصيانة</button>
+            <button class="nav-btn" id="btn-delivered" onclick="switchMainTab('delivered', this)">📦 المسلمة</button>
+            <button class="nav-btn" id="btn-returned" onclick="switchMainTab('returned', this)">🔄 المسترجعة</button>
+            <button class="nav-btn" id="btn-reports" onclick="switchMainTab('reports', this)">📊 التقارير الشاملة</button>
         </div>
     </div>
 
@@ -245,7 +252,7 @@
                 <input type="text" id="chatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsg()">
                 <button class="icon-action-btn" onpointerdown="event.preventDefault(); document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️</button>
                 <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onpointerdown="event.preventDefault(); toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
-                <button class="primary-btn" onpointerdown="event.preventDefault(); sendTechMsg()" style="width: auto; padding: 12px 24px;">إرسال</button>
+                <button class="primary-btn" onpointerdown="event.preventDefault(); sendTechMsg()">إرسال</button>
             </div>
         </div>
     </div>
@@ -309,7 +316,6 @@
         let currentTab = 'add';
         let activeChatId = null;
         let realtimeSubscription = null;
-        let chatPollInterval = null;
 
         let myPeer = null;
         let currentCall = null;
@@ -323,6 +329,40 @@
         let isRecording = false;
         let audioCtx = null;
         let ringInterval = null;
+
+        // ==============================================
+        // حل مشكلة الكيبورد المتقدم للموبايل (لوحة التحكم)
+        // ==============================================
+        const chatInput = document.getElementById('chatInput');
+        const chatContainerWrapper = document.getElementById('chatBoxContainer');
+
+        function adjustForKeyboard() {
+            setTimeout(() => {
+                if (chatContainerWrapper) {
+                    const y = chatContainerWrapper.getBoundingClientRect().top + window.scrollY - 20;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+                scrollToBottomChat();
+            }, 300);
+        }
+
+        if (chatInput) {
+            chatInput.addEventListener('focus', adjustForKeyboard);
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                if (document.activeElement === chatInput) {
+                    adjustForKeyboard();
+                }
+            });
+        }
+
+        function scrollToBottomChat() {
+            let box = document.getElementById('chatMsgsDiv');
+            if(box) box.scrollTop = box.scrollHeight;
+        }
+        // ==============================================
 
         function formatSimpleDate(isoString) {
             if(!isoString) return '-';
@@ -341,6 +381,7 @@
         }
         function closeVipModal() { document.getElementById('vipModal').style.display = 'none'; }
 
+        // الأصوات والتنبيهات
         function playTone(freq1, freq2, duration) {
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -382,42 +423,94 @@
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').style.display = 'flex'; }
         function closeLightbox() { document.getElementById('lightboxModal').style.display = 'none'; }
 
+        // ==============================================
+        // نظام حفظ الحالة (Refresh State) عبر الـ URL
+        // ==============================================
+        function updateURLState(skipHistory = false) {
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', currentTab);
+            if (activeChatId) newUrl.searchParams.set('chat', activeChatId);
+            else newUrl.searchParams.delete('chat');
+            
+            if(!skipHistory) window.history.pushState({ tab: currentTab, chat: activeChatId }, "", newUrl);
+        }
+
+        window.addEventListener('popstate', (e) => {
+            if(e.state) {
+                if(e.state.tab) switchMainTab(e.state.tab, document.getElementById('btn-' + e.state.tab), true);
+                if(e.state.chat) openChat(e.state.chat, true);
+                else closeChat(true);
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             currentTech = urlParams.get('user') || localStorage.getItem('currentUser');
             if(!currentTech) { window.location.href = 'login.html'; return; }
+            
             document.getElementById('shopTitle').innerText = currentTech;
             document.getElementById('countrySelect').value = currentCountry;
             applyCountrySettings(currentCountry);
             checkNotificationPermission();
             initTechVoice(currentTech);
-            await fetchDevicesInitial();
             
-            // تحديث عام كل 5 ثواني للصفحة
-            setInterval(async () => {
-                let { data } = await _supabase.from('devices').select('*').eq('technician', currentTech).order('id', { ascending: false });
-                if(data) {
-                    let shouldRender = false;
-                    data.forEach(newData => {
-                        let oldData = devices.find(d => d.id === newData.id);
-                        if(!oldData || oldData.status !== newData.status || (newData.chat && (!oldData.chat || newData.chat.length > oldData.chat.length))) {
-                            shouldRender = true;
-                            if (oldData && newData.chat && newData.chat.length > (oldData.chat || []).length) {
-                                let lastMsg = newData.chat[newData.chat.length - 1];
-                                if (lastMsg.sender === 'client') {
-                                    playMessagePing(); showDesktopNotification(`رسالة من: ${newData.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
-                                }
-                            }
-                        }
-                    });
-                    if(shouldRender) { devices = data; refreshActiveView(); }
-                }
-            }, 5000);
+            await fetchDevicesInitial();
+            setupRealtimeListener();
+
+            // استعادة المكان لو عملنا Refresh
+            let initTab = urlParams.get('tab') || 'add';
+            let initChat = urlParams.get('chat');
+            
+            switchMainTab(initTab, document.getElementById('btn-' + initTab), true);
+            if (initChat) setTimeout(() => openChat(initChat, true), 800);
         });
 
         async function fetchDevicesInitial() {
             let { data } = await _supabase.from('devices').select('*').eq('technician', currentTech).order('id', { ascending: false });
             if(data) { devices = data; refreshActiveView(); }
+        }
+
+        // ==============================================
+        // نظام المزامنة اللحظية (Realtime) لضمان عدم مسح الرسائل
+        // ==============================================
+        function setupRealtimeListener() {
+            if (realtimeSubscription) _supabase.removeChannel(realtimeSubscription);
+            
+            realtimeSubscription = _supabase.channel('tech-devices')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `technician=eq.${currentTech}` }, payload => {
+                    if (payload.eventType === 'INSERT') {
+                        devices.unshift(payload.new);
+                        refreshActiveView();
+                    } 
+                    else if (payload.eventType === 'UPDATE') {
+                        let updated = payload.new;
+                        let idx = devices.findIndex(d => d.id === updated.id);
+                        if (idx !== -1) {
+                            let oldData = devices[idx];
+                            devices[idx] = updated;
+                            
+                            // تنبيه لو رسالة جديدة من العميل
+                            if (updated.chat && updated.chat.length > (oldData.chat || []).length) {
+                                let lastMsg = updated.chat[updated.chat.length - 1];
+                                if (lastMsg.sender === 'client') {
+                                    playMessagePing();
+                                    showDesktopNotification(`رسالة من: ${updated.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
+                                }
+                            }
+                            
+                            if (activeChatId == updated.id) {
+                                renderChatMsgs(updated.chat);
+                            }
+                        } else {
+                            devices.unshift(updated);
+                        }
+                        refreshActiveView();
+                    } 
+                    else if (payload.eventType === 'DELETE') {
+                        devices = devices.filter(d => d.id !== payload.old.id);
+                        refreshActiveView();
+                    }
+                }).subscribe();
         }
 
         function refreshActiveView() {
@@ -432,15 +525,20 @@
             const phoneInput = document.getElementById('clientPhone'); if(phoneInput) phoneInput.placeholder = conf.placeholder;
         }
 
-        function switchMainTab(tab, btn) {
+        function switchMainTab(tab, btn, skipHistory = false) {
             currentTab = tab;
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
+            if(btn) btn.classList.add('active');
+            else { let b = document.getElementById('btn-' + tab); if(b) b.classList.add('active'); }
+
             let titles = { 'current': '⚙ الأجهزة قيد الفحص والصيانة', 'delivered': '📦 الأجهزة المسلمة للعملاء', 'returned': '🔄 الأجهزة المسترجعة' };
             document.getElementById('section-add').style.display = 'none'; document.getElementById('section-table').style.display = 'none'; document.getElementById('section-reports').style.display = 'none';
 
             if(tab === 'add') document.getElementById('section-add').style.display = 'block';
             else if(tab === 'reports') { document.getElementById('section-reports').style.display = 'block'; renderReportsTable(); }
             else { document.getElementById('section-table').style.display = 'block'; document.getElementById('tableTitle').innerHTML = `<span>📋</span> ${titles[tab] || 'الأجهزة'}`; renderCurrentTable(); }
+            
+            updateURLState(skipHistory);
         }
 
         function renderCurrentTable() {
@@ -547,7 +645,7 @@
         }
 
         // ==============================================
-        // نظام الطباعة السليم عبر Wrapper لتجاوز الموبايل
+        // نظام الطباعة السليم والمعزول (بدون تلوين للشاشة)
         // ==============================================
         function executePrint(htmlContent) {
             let printArea = document.getElementById('printAreaWrapper');
@@ -585,6 +683,60 @@
             executePrint(html);
         }
 
+        function getFilteredReportData() {
+            let from = document.getElementById('reportFromDate').value;
+            let to = document.getElementById('reportToDate').value;
+            let statFilter = document.getElementById('reportStatusFilter').value;
+            
+            let filtered = devices;
+            
+            if (statFilter === 'DELIVERED') filtered = filtered.filter(d => d.status.includes('تم تسليم'));
+            else if (statFilter === 'RETURNED') filtered = filtered.filter(d => d.status.includes('مسترجع'));
+            else if (statFilter === 'IN_PROGRESS') filtered = filtered.filter(d => !d.status.includes('تم تسليم') && !d.status.includes('مسترجع'));
+            
+            if (from) { let fromDate = new Date(from); filtered = filtered.filter(d => new Date(d.created_at) >= fromDate); }
+            if (to) { let toDate = new Date(to); toDate.setHours(23,59,59,999); filtered = filtered.filter(d => new Date(d.created_at) <= toDate); }
+            return filtered;
+        }
+
+        function renderReportsTable() {
+            let list = getFilteredReportData();
+            let tbody = document.getElementById('reportTbody');
+            tbody.innerHTML = '';
+            let totalCost = 0; let curConf = COUNTRY_CONFIGS[currentCountry] || COUNTRY_CONFIGS['EG'];
+            
+            list.forEach(d => {
+                let costVal = parseFloat(d.cost) || 0;
+                totalCost += costVal;
+                let dateF = d.created_at ? d.created_at.slice(0,10) : '-';
+                tbody.innerHTML += `<tr>
+                    <td style="font-family:monospace; font-weight:bold; color:var(--primary);">${d.tracking_number}</td>
+                    <td>${dateF}</td>
+                    <td style="font-weight:bold;">${d.customer_name}</td>
+                    <td style="direction:ltr;">${d.phone}</td>
+                    <td>${d.device_name}</td>
+                    <td>${d.problem || '-'}</td>
+                    <td>${d.status}</td>
+                    <td style="color:#34d399; font-weight:bold;">${costVal}</td>
+                </tr>`;
+            });
+            
+            document.getElementById('statTotal').innerText = devices.length;
+            document.getElementById('statInRep').innerText = devices.filter(d => !d.status.includes('تم تسليم') && !d.status.includes('مسترجع')).length;
+            document.getElementById('statDelivered').innerText = devices.filter(d => d.status.includes('تم تسليم')).length;
+            document.getElementById('statReturned').innerText = devices.filter(d => d.status.includes('مسترجع')).length;
+            
+            let revenue = devices.filter(d => d.status.includes('تم تسليم')).reduce((acc, curr) => acc + (parseFloat(curr.cost)||0), 0);
+            document.getElementById('statRevenue').innerText = revenue + ' ' + curConf.currency;
+        }
+
+        function resetReportFilters() {
+            document.getElementById('reportFromDate').value = '';
+            document.getElementById('reportToDate').value = '';
+            document.getElementById('reportStatusFilter').value = 'ALL';
+            renderReportsTable();
+        }
+
         function printFilteredReport() {
             let list = getFilteredReportData();
             if(list.length === 0) { showVipModal("تنبيه", "لا توجد سجلات لطباعتها!", "⚠"); return; }
@@ -606,7 +758,7 @@
                     </table>
                     <div style="margin-top: 20px; font-weight:bold; font-size:15px; display:flex; justify-content:space-between; border-top: 2px solid #000; padding-top: 10px;">
                         <div>إجمالي الأجهزة: ${list.length}</div>
-                        <div>إجمالي الإيرادات: ${totalCost} ${curConf.currency}</div>
+                        <div>إجمالي الإيرادات المسجلة: ${totalCost} ${curConf.currency}</div>
                     </div>
                 </div>
             `;
@@ -627,36 +779,26 @@
         }
 
         // ==============================================
-        // الشات اللحظي (Optimistic UI + Lock System)
+        // الشات اللحظي (Optimistic UI) بدون مسح أثناء الكتابة
         // ==============================================
         let isTechSending = false;
         
-        function closeChat() { document.getElementById('chatBoxContainer').style.display = 'none'; activeChatId = null; if (chatPollInterval) clearInterval(chatPollInterval); }
+        function closeChat(skipHistory = false) { 
+            document.getElementById('chatBoxContainer').style.display = 'none'; 
+            activeChatId = null; 
+            updateURLState(skipHistory);
+        }
 
-        function openChat(id) {
+        function openChat(id, skipHistory = false) {
             let d = devices.find(x => String(x.id) === String(id)); if(!d) return;
-            if(d.status.includes('تم تسليم') || d.status.includes('مسترجع')) { showVipModal("تنبيه", "لا يمكن فتح المحادثة لجهاز منتهي.", "⚠️"); return; }
+            if(d.status.includes('تم تسليم') || d.status.includes('مسترجع')) { showVipModal("تنبيه", "لا يمكن فتح المحادثة لجهاز منتهي.", "⚠"); return; }
             
             activeChatId = String(id);
             document.getElementById('chatBoxContainer').style.display = 'block';
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             
-            if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(() => syncChatData(id), 1500);
-            syncChatData(id);
-        }
-
-        async function syncChatData(id) {
-            if(isTechSending) return; // قفل السحب أثناء إرسال رسالة لتجنب اللخبطة
-            let { data } = await _supabase.from('devices').select('chat').eq('id', id).single();
-            if(data && data.chat) {
-                let d = devices.find(x => String(x.id) === String(id));
-                if(d) { 
-                    if (JSON.stringify(d.chat || []) !== JSON.stringify(data.chat)) {
-                        d.chat = data.chat; renderChatMsgs(data.chat); 
-                    }
-                }
-            }
+            renderChatMsgs(d.chat);
+            updateURLState(skipHistory);
         }
 
         function renderChatMsgs(chat) {
@@ -691,19 +833,24 @@
                 `;
             });
             
-            if (isScrolledToBottom || hasUnread) setTimeout(() => box.scrollTop = box.scrollHeight, 50);
+            if (isScrolledToBottom || hasUnread) setTimeout(scrollToBottomChat, 50);
             if (hasUnread) markAsReadByTech(activeChatId);
         }
 
         async function markAsReadByTech(chatId) {
+            let d = devices.find(x => String(x.id) === String(chatId)); if(!d) return;
             let { data } = await _supabase.from('devices').select('chat').eq('id', chatId).single();
             if(!data || !data.chat) return;
+            
             let changed = false; let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
             let newChat = data.chat.map(m => {
                 if(m.sender === 'client' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; }
                 return m;
             });
-            if(changed) await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
+            if(changed) {
+                await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
+                d.chat = newChat;
+            }
         }
 
         async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
@@ -712,19 +859,23 @@
             if(!text || !activeChatId || isTechSending) return;
 
             let d = devices.find(x => String(x.id) === String(activeChatId)); if(!d) return;
-            isTechSending = true; // تفعيل القفل لمنع اللخبطة
+            isTechSending = true; 
             
-            if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); } // تفريغ لايف وحماية الكيبورد
+            if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); }
 
             let newMsg = { sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
-            let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); d.chat = localChat;
-            renderChatMsgs(localChat); // استجابة فورية 🚀
             
-            let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
-            let dbChat = (data && data.chat) ? [...data.chat] : [];
-            dbChat.push(newMsg);
-            await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
-            isTechSending = false; // فك القفل
+            let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
+            renderChatMsgs(localChat); 
+            
+            try {
+                let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+                let dbChat = (data && data.chat) ? [...data.chat] : [];
+                dbChat.push(newMsg);
+                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                d.chat = dbChat;
+            } catch(e) { console.error(e); }
+            finally { isTechSending = false; }
         }
 
         async function toggleVoiceRecording() {
@@ -755,17 +906,19 @@
         function stopCallTimer() { if(callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; } let timerEl = document.getElementById('callTimerDisplay'); if (timerEl) { timerEl.style.display = "none"; timerEl.innerText = "00:00"; } }
 
         function initTechVoice(tech) {
-            if(myPeer) myPeer.destroy();
-            myPeer = new Peer('alhawary_tech_' + sanitizePeerId(tech));
-            myPeer.on('call', call => {
-                currentCall = call;
-                let trackNumRaw = call.peer.replace('alhawary_client_', ''); let trackNum = decodeURIComponent(trackNumRaw.replace(/_/g, '%'));
-                let callerDevice = devices.find(d => d.tracking_number === trackNum);
-                document.getElementById('callScreen').classList.add('active'); document.getElementById('callTargetName').innerText = callerDevice ? callerDevice.customer_name : 'عميل غير معروف';
-                document.getElementById('callStatusText').innerText = 'مكالمة واردة من العميل...'; document.getElementById('btnAnswerCall').style.display = 'flex';
-                startIncomingRingtone(); showDesktopNotification("اتصال وارد من عميل", `العميل يتصل بك الآن 📞`);
-            });
-            myPeer.on('error', err => console.warn('PeerJS Warn:', err.type));
+            if(myPeer) { myPeer.destroy(); }
+            setTimeout(() => {
+                myPeer = new Peer('alhawary_tech_' + sanitizePeerId(tech));
+                myPeer.on('call', call => {
+                    currentCall = call;
+                    let trackNumRaw = call.peer.replace('alhawary_client_', ''); let trackNum = decodeURIComponent(trackNumRaw.replace(/_/g, '%'));
+                    let callerDevice = devices.find(d => d.tracking_number === trackNum);
+                    document.getElementById('callScreen').classList.add('active'); document.getElementById('callTargetName').innerText = callerDevice ? callerDevice.customer_name : 'عميل غير معروف';
+                    document.getElementById('callStatusText').innerText = 'مكالمة واردة من العميل...'; document.getElementById('btnAnswerCall').style.display = 'flex';
+                    startIncomingRingtone(); showDesktopNotification("اتصال وارد من عميل", `العميل يتصل بك الآن 📞`);
+                });
+                myPeer.on('error', err => console.warn('PeerJS Warn:', err.type));
+            }, 500);
         }
 
         async function startTechCall() {
@@ -777,7 +930,7 @@
                 let call = myPeer.call('alhawary_client_' + sanitizePeerId(d.tracking_number), localStream); currentCall = call;
                 call.on('stream', remoteStream => { stopCallRingtone(); document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); startCallTimer(); });
                 call.on('close', endCurrentCall); call.on('error', endCurrentCall);
-            } catch(e) { showVipModal("تنبيه المايكروفون", "يرجى منح صلاحية المايكروفون للاتصال.", "🎙️"); }
+            } catch(e) { showVipModal("تنبيه المايكروفون", "يرجى منح صلاحية المايكروفون للاتصال.", "🎙️"); endCurrentCall(); }
         }
 
         async function answerIncomingCall() {
