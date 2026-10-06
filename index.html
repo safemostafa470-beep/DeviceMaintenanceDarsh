@@ -45,7 +45,7 @@
         .status-special-card { display: none; padding: 35px 24px; border-radius: 24px; text-align: center; animation: fadeIn 0.4s ease; margin-top: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .status-delivered-card { background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; }
         .status-returned-card { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; }
-        .extra-box { background: rgba(245, 158, 11, 0.1); border: 2px solid rgba(245, 158, 11, 0.4); padding: 20px; border-radius: 18px; margin-top: 24px; text-align: center; transition: all 0.3s ease;}
+        .extra-box { background: rgba(245, 158, 11, 0.1); border: 2px solid rgba(245, 158, 11, 0.4); padding: 20px; border-radius: 18px; margin-top: 24px; text-align: center; }
         .extra-box p { font-size: 1.1rem; color: #fcd34d; margin-bottom: 16px; font-weight: 900; }
         .action-buttons { display: flex; gap: 14px; justify-content: center; }
         .approve-btn, .reject-btn { color: white; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; flex: 1; font-size: 1.05rem; }
@@ -68,11 +68,9 @@
         .icon-action-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--primary); color: var(--primary); }
         .chat-input-row .primary-btn { flex-shrink: 0; white-space: nowrap; padding: 12px 16px !important; }
         .voice-btn.recording { background: #ef4444; border-color: #ef4444; color: white; animation: pulse-record 1s infinite; }
-        @keyframes pulse-record { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
         .call-avatar { width: 120px; height: 120px; background: var(--accent-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 24px; animation: pulse-avatar 1.5s infinite; }
-        @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,0.7); } 70% { box-shadow: 0 0 0 30px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
         .call-name { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
         .call-status { font-size: 1.1rem; color: #94a3b8; margin-bottom: 35px; }
         .call-actions { display: flex; gap: 24px; align-items: center; }
@@ -220,42 +218,6 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2eGt4bWt0a3hhd3B0YnJxdHV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDY2MTcsImV4cCI6MjEwNjAyMjYxN30.NkqXPEpMf6VFE3nFQ1V7T5HyjfoxIrT_apKh7S6a_14';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 🌟 قناة البث اللحظي الموحدة لتجاوز تأخير قاعدة البيانات 🌟
-        const sysChannel = _supabase.channel('hawary-sync');
-
-        sysChannel.on('broadcast', { event: 'update' }, (payload) => {
-            let data = payload.payload;
-            if (!activeDevice || activeDevice.id !== data.deviceId) return;
-
-            if (data.action === 'status') {
-                activeDevice.status = data.status;
-                if(data.new_fault !== undefined) activeDevice.new_fault = data.new_fault;
-                if(data.cost !== undefined) activeDevice.cost = data.cost;
-                updateUI(activeDevice);
-                if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) showDeliveryOrReturnScreen(activeDevice);
-            }
-            else if (data.action === 'chat') {
-                let msg = data.msg;
-                if (!activeDevice.chat) activeDevice.chat = [];
-                if (!activeDevice.chat.find(m => m.id === msg.id)) {
-                    activeDevice.chat.push(msg);
-                    renderChat(activeDevice.chat);
-                    playMessagePing();
-                    markAsReadByClient(); // إرسال علامة الصحين فوراً
-                }
-            }
-            else if (data.action === 'read') {
-                if (activeDevice.chat) {
-                    activeDevice.chat.forEach(m => {
-                        if (m.sender === 'client' && !m.isRead) {
-                            m.isRead = true; m.readTime = data.time;
-                        }
-                    });
-                    renderChat(activeDevice.chat);
-                }
-            }
-        }).subscribe();
-
         const I18N = {
             ar: {
                 docTitle: "تتبع حالة الصيانة", searchHeader: "استعلام عن حالة الصيانة", searchBtn: "بحث",
@@ -283,6 +245,7 @@
         let currentCountry = localStorage.getItem('app_country') || 'EG'; 
         let currentCurrency = 'ج.م';
         let activeDevice = null;
+        let syncInterval = null;
 
         let myPeer = null; 
         let currentCall = null; 
@@ -293,27 +256,6 @@
 
         let mediaRecorder = null; let audioChunks = []; let isRecording = false;
         let audioCtx = null; let ringInterval = null;
-
-        let messageQueue = [];
-        let isProcessingQueue = false;
-
-        async function processMessageQueue() {
-            if (isProcessingQueue || messageQueue.length === 0 || !activeDevice) return;
-            isProcessingQueue = true;
-            while (messageQueue.length > 0) {
-                let msg = messageQueue[0];
-                try {
-                    let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
-                    let dbChat = (data && data.chat) ? [...data.chat] : [];
-                    if(!dbChat.find(x => x.id === msg.id)) {
-                        dbChat.push(msg);
-                        await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-                    }
-                    messageQueue.shift(); 
-                } catch(e) { break; }
-            }
-            isProcessingQueue = false;
-        }
 
         const chatInput = document.getElementById('clientChatInput');
         const chatContainerWrapper = document.getElementById('chatContainerWrapper');
@@ -421,6 +363,7 @@
 
         function showDeliveryOrReturnScreen(d) {
             document.getElementById('resultSection').style.display = 'none';
+            if(syncInterval) clearInterval(syncInterval);
 
             if (d.status.includes('تم تسليم')) {
                 document.getElementById('delivTrack').innerText = d.tracking_number; document.getElementById('delivName').innerText = d.customer_name;
@@ -452,31 +395,59 @@
             if (error || !data || data.length === 0) { 
                 msgBox.innerHTML = I18N[currentLang].noResult; msgBox.style.display = 'block'; 
                 activeDevice = null; 
+                if(syncInterval) clearInterval(syncInterval);
                 return; 
             }
 
             msgBox.style.display = 'none';
-            let d = data[0]; activeDevice = d; loadLiveAnnouncement();
+            activeDevice = data[0]; loadLiveAnnouncement();
 
             if(!skipHistory) {
-                const newUrl = window.location.pathname + "?track=" + encodeURIComponent(d.tracking_number);
-                window.history.pushState({ track: d.tracking_number }, "", newUrl);
+                const newUrl = window.location.pathname + "?track=" + encodeURIComponent(activeDevice.tracking_number);
+                window.history.pushState({ track: activeDevice.tracking_number }, "", newUrl);
             }
             
-            if (d.status.includes('تم تسليم') || d.status.includes('مسترجع')) { showDeliveryOrReturnScreen(d); return; }
+            if (activeDevice.status.includes('تم تسليم') || activeDevice.status.includes('مسترجع')) { showDeliveryOrReturnScreen(activeDevice); return; }
 
             updateUI(activeDevice);
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            // جلب الداتا الحديثة مرة واحدة فقط
-            let { data: freshData } = await _supabase.from('devices').select('chat, status').eq('id', activeDevice.id).single();
-            if(freshData) {
-                activeDevice.chat = freshData.chat || [];
-                renderChat(activeDevice.chat);
-                // نعلم الرسائل مقروءة ونرسل للفني
-                markAsReadByClient();
-            }
+            // 🌟 تشغيل المزامنة الذكية السريعة كل ثانية ونصف (بدون ريفرش) 🌟
+            if(syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(smartSyncClient, 1500);
+        }
+
+        // ==============================================
+        // رادار المزامنة الذكية (Smart Sync) للعميل
+        // ==============================================
+        async function smartSyncClient() {
+            if(!activeDevice) return;
+            try {
+                let { data } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
+                if(!data) return;
+
+                let stateChanged = data.status !== activeDevice.status || data.cost !== activeDevice.cost || data.new_fault !== activeDevice.new_fault || data.expected_time !== activeDevice.expected_time;
+                let dbChatStr = JSON.stringify(data.chat || []);
+                let localChatStr = JSON.stringify(activeDevice.chat || []);
+                let chatChanged = dbChatStr !== localChatStr;
+
+                if(stateChanged || chatChanged) {
+                    if(chatChanged && (data.chat || []).length > (activeDevice.chat || []).length) {
+                        let lastMsg = data.chat[data.chat.length - 1];
+                        if(lastMsg.sender === 'tech') playMessagePing();
+                    }
+                    
+                    activeDevice.status = data.status; activeDevice.cost = data.cost; activeDevice.new_fault = data.new_fault; activeDevice.expected_time = data.expected_time;
+                    activeDevice.chat = data.chat || [];
+
+                    if(stateChanged) {
+                        if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { showDeliveryOrReturnScreen(activeDevice); return; }
+                        updateUI(activeDevice);
+                    }
+                    if(chatChanged) renderChat(activeDevice.chat);
+                }
+            } catch(e) {}
         }
 
         function updateUI(d) {
@@ -487,22 +458,21 @@
             document.getElementById('resCost').innerText = (d.cost || '0') + ' ' + currentCurrency; document.getElementById('resStatus').innerText = d.status;
 
             let extraBox = document.getElementById('extraNoticeBox');
-            if(d.status && d.status.includes('بانتظار')) {
+            // ظهور صندوق الموافقة أو الرفض فوراً للعميل
+            if(d.status && d.status.includes('بانتظار موافقة العميل')) {
                 extraBox.style.display = 'block';
                 document.getElementById('extraNoticeText').innerText = d.new_fault ? `${d.new_fault} (${d.cost} ${currentCurrency})` : `${d.cost} ${currentCurrency}`;
                 document.getElementById('approveBtnContainer').innerHTML = `<button class="approve-btn" onclick="sendApproval(true)">${dict.approveBtn}</button> <button class="reject-btn" onclick="sendApproval(false)">${dict.rejectBtn}</button>`;
             } else { extraBox.style.display = 'none'; }
+            
+            if(!document.getElementById('clientChatMsgs').innerHTML) renderChat(d.chat || []);
         }
 
-        // 🌟 إرسال قرار العميل اللحظي للفني
+        // إرسال قرار العميل للفني
         async function sendApproval(isApproved) {
             let nextStatus = isApproved ? 'جاري الإصلاح' : 'تم رفض التكلفة من العميل';
             activeDevice.status = nextStatus;
             updateUI(activeDevice);
-            
-            // البث اللحظي للفني ليغير القائمة المنسدلة لديه
-            sysChannel.send({ type: 'broadcast', event: 'update', payload: { action: 'status', deviceId: activeDevice.id, status: nextStatus } });
-            
             await _supabase.from('devices').update({ status: nextStatus }).eq('id', activeDevice.id);
         }
 
@@ -514,8 +484,11 @@
             let valid = (chatArr || []).filter(m => !m.isCall);
             if(valid.length === 0) { container.innerHTML = `<div style="color:var(--text-sub); text-align:center; margin:auto; font-weight:800;">${I18N[currentLang].chatEmpty}</div>`; return; }
 
+            let hasUnread = false;
             valid.forEach(m => {
                 let isClient = m.sender === 'client';
+                if (!isClient && !m.isRead) hasUnread = true; 
+
                 let readInfo = '';
                 if(isClient) {
                     let t = m.readTime ? ` (${m.readTime})` : '';
@@ -538,27 +511,29 @@
                 `;
             });
             
-            if(isScrolledToBottom) setTimeout(scrollToBottomChat, 50);
+            if(isScrolledToBottom || hasUnread) setTimeout(scrollToBottomChat, 50);
+            if(hasUnread) markAsReadByClient(); // يعلم الفني فوراً
         }
 
-        // 🌟 إرسال علامة القراءة اللحظية للفني
         async function markAsReadByClient() {
-            if(!activeDevice || !activeDevice.chat) return;
-            let time = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-            let changed = false;
-            
-            activeDevice.chat.forEach(m => { 
-                if(m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = time; changed = true; } 
-            });
-            
-            if(changed) {
-                // إرسال البث ليظهر للفني فوراً
-                sysChannel.send({ type: 'broadcast', event: 'update', payload: { action: 'read', deviceId: activeDevice.id, time: time } });
-                await _supabase.from('devices').update({chat: activeDevice.chat}).eq('id', activeDevice.id);
-            }
+            if(!activeDevice) return;
+            try {
+                let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
+                if(!data || !data.chat) return;
+                
+                let changed = false; let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+                let newChat = data.chat.map(m => { 
+                    if(m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; } 
+                    return m; 
+                });
+                
+                if(changed) {
+                    await _supabase.from('devices').update({chat: newChat}).eq('id', activeDevice.id);
+                }
+            } catch(e) {}
         }
 
-        function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
+        async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
             if(!text || !activeDevice) return;
@@ -568,16 +543,19 @@
             let msgId = Date.now().toString() + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            if(!activeDevice.chat) activeDevice.chat = [];
-            activeDevice.chat.push(newMsg);
-            renderChat(activeDevice.chat);
+            // 🌟 1. تحديث شاشة العميل فوراً 🌟
+            let tempChat = [...(activeDevice.chat || []), newMsg];
+            activeDevice.chat = tempChat;
+            renderChat(tempChat);
             setTimeout(scrollToBottomChat, 50);
 
-            // 🌟 إرسال الرسالة في الهواء للفني فوراً
-            sysChannel.send({ type: 'broadcast', event: 'update', payload: { action: 'chat', deviceId: activeDevice.id, msg: newMsg } });
-            
-            messageQueue.push(newMsg);
-            processMessageQueue();
+            // 🌟 2. الإرسال المباشر للداتابيز بدون تعطيل 🌟
+            try {
+                let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
+                let dbChat = (data && data.chat) ? [...data.chat] : [];
+                dbChat.push(newMsg);
+                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
+            } catch(e) {}
         }
 
         async function toggleVoiceRecording() {
@@ -600,9 +578,6 @@
             }
         }
 
-        // ==============================================
-        // نظام المكالمات الحية
-        // ==============================================
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
 
         function startCallTimer() {
@@ -661,11 +636,13 @@
                     
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
+                    
                     startCallTimer();
                 });
                 call.on('close', endCurrentCall); 
                 call.on('error', endCurrentCall);
             } catch(e) { 
+                alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون للاتصال.' : 'Please allow microphone access.'); 
                 endCurrentCall();
             }
         }
@@ -682,10 +659,12 @@
                     
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
+                    
                     startCallTimer();
                 });
                 currentCall.on('close', endCurrentCall);
             } catch(e) { 
+                alert('يرجى السماح بالمايك للرد على المكالمة'); 
                 endCurrentCall(); 
             }
         }
@@ -704,7 +683,8 @@
             if(currentCall) { currentCall.close(); currentCall = null; }
             if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
             document.getElementById('callScreen').classList.remove('active'); 
-            let audio = document.getElementById('remoteAudio'); if(audio) audio.srcObject = null;
+            let audio = document.getElementById('remoteAudio');
+            if(audio) audio.srcObject = null;
             isMuted = false; let btn = document.getElementById('btnMuteCall'); if (btn) { btn.classList.remove('muted'); btn.innerText = '🎤'; }
         }
     </script>
