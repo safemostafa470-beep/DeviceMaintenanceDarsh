@@ -265,6 +265,92 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2eGt4bWt0a3hhd3B0YnJxdHV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDY2MTcsImV4cCI6MjEwNjAyMjYxN30.NkqXPEpMf6VFE3nFQ1V7T5HyjfoxIrT_apKh7S6a_14';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let currentTech = '';
+        let sysChannel = null;
+
+        // 🌟 إعداد رادار الاتصال اللحظي الكامل للفني (الأحداث السريعة)
+        function setupTechBroadcast() {
+            if (sysChannel) _supabase.removeChannel(sysChannel);
+            sysChannel = _supabase.channel('shop-' + currentTech);
+            
+            // 1. استقبال رسائل الشات اللحظية من العميل
+            sysChannel.on('broadcast', { event: 'chat-msg' }, payload => {
+                let { deviceId, msg } = payload.payload;
+                let d = devices.find(x => String(x.id) === String(deviceId));
+                if (d) {
+                    if(!d.chat) d.chat = [];
+                    if(!d.chat.find(x => x.id === msg.id)) {
+                        d.chat.push(msg);
+                        if (activeChatId && String(activeChatId) === String(deviceId)) {
+                            renderChatMsgs(d.chat);
+                            playMessagePing();
+                            markAsReadByTech(deviceId); // يرسل إشعار مقروءة للعميل
+                        } else {
+                            refreshActiveView();
+                            playMessagePing();
+                            showDesktopNotification(`رسالة جديدة من: ${d.customer_name}`, msg.isImage ? "أرسل صورة" : (msg.isVoice ? "رسالة صوتية" : msg.text));
+                        }
+                    }
+                }
+            });
+
+            // 2. استقبال قرار العميل اللحظي (موافقة أو رفض) لتغيير الحالة فوراً
+            sysChannel.on('broadcast', { event: 'status-update' }, payload => {
+                let { deviceId, status } = payload.payload;
+                let d = devices.find(x => String(x.id) === String(deviceId));
+                if (d) {
+                    d.status = status;
+                    refreshActiveView(); // يغير القائمة المنسدلة فوراً أمام الفني
+                    playMessagePing();
+                    if(status === 'جاري الإصلاح') showDesktopNotification("موافقة عميل", `وافق ${d.customer_name} على تكلفة الإصلاح.`);
+                    else showDesktopNotification("رفض عميل", `رفض ${d.customer_name} التكلفة.`);
+                }
+            });
+
+            // 3. استقبال إشعار القراءة (✓✓) اللحظي من العميل
+            sysChannel.on('broadcast', { event: 'read-receipt' }, payload => {
+                let { deviceId, readTime } = payload.payload;
+                let d = devices.find(x => String(x.id) === String(deviceId));
+                if (d && d.chat) {
+                    d.chat.forEach(m => {
+                        if (m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = readTime; }
+                    });
+                    if (activeChatId && String(activeChatId) === String(deviceId)) {
+                        renderChatMsgs(d.chat); // يظهر علامة الصح الزرقاء فوراً
+                    }
+                }
+            });
+
+            // 4. التحديث التلقائي الشامل للحفظ في الداتا (احتياطي)
+            sysChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `technician=eq.${currentTech}` }, payload => {
+                let updated = payload.new;
+                if (!updated) return;
+                
+                let idx = devices.findIndex(x => x.id === updated.id);
+                if (idx !== -1) {
+                    let oldChatStr = JSON.stringify(devices[idx].chat || []);
+                    let newChatStr = JSON.stringify(updated.chat || []);
+                    
+                    devices[idx].status = updated.status;
+                    devices[idx].cost = updated.cost;
+                    devices[idx].new_fault = updated.new_fault;
+                    devices[idx].expected_time = updated.expected_time;
+                    
+                    if(oldChatStr !== newChatStr) {
+                        devices[idx].chat = updated.chat;
+                        if (activeChatId && String(activeChatId) === String(updated.id)) {
+                            renderChatMsgs(updated.chat);
+                        }
+                    }
+                } else {
+                    devices.unshift(updated);
+                }
+                refreshActiveView(); 
+            });
+
+            sysChannel.subscribe();
+        }
+
         const COUNTRY_CONFIGS = {
             EG: { name: 'مصر', currency: 'ج.م', dialCode: '20', placeholder: '01xxxxxxxxx' },
             SA: { name: 'السعودية', currency: 'ر.س', dialCode: '966', placeholder: '05xxxxxxxx' },
@@ -273,11 +359,9 @@
         };
 
         let currentCountry = localStorage.getItem('app_country') || 'EG';
-        let currentTech = '';
         let devices = [];
         let currentTab = 'add';
         let activeChatId = null;
-        let syncInterval = null;
 
         let myPeer = null;
         let currentCall = null;
@@ -291,6 +375,31 @@
         let isRecording = false;
         let audioCtx = null;
         let ringInterval = null;
+
+        let messageQueue = [];
+        let isProcessingQueue = false;
+
+        async function processMessageQueue() {
+            if (isProcessingQueue || messageQueue.length === 0 || !activeChatId) return;
+            isProcessingQueue = true;
+
+            while (messageQueue.length > 0) {
+                let msg = messageQueue[0];
+                try {
+                    let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+                    let dbChat = (data && data.chat) ? [...data.chat] : [];
+                    if(!dbChat.find(x => x.id === msg.id)) {
+                        dbChat.push(msg);
+                        await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    }
+                    messageQueue.shift(); 
+                } catch(e) {
+                    console.error("Queue error:", e);
+                    break;
+                }
+            }
+            isProcessingQueue = false;
+        }
 
         const chatInput = document.getElementById('chatInput');
         const chatContainerWrapper = document.getElementById('chatBoxContainer');
@@ -404,10 +513,7 @@
             initTechVoice(currentTech);
             
             await fetchDevicesInitial();
-
-            // 🌟 تشغيل المزامنة الذكية السريعة كل 2 ثانية للمهندس (بدون ريفرش) 🌟
-            if(syncInterval) clearInterval(syncInterval);
-            syncInterval = setInterval(smartSyncTech, 2000);
+            setupTechBroadcast(); 
 
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
@@ -419,54 +525,6 @@
         async function fetchDevicesInitial() {
             let { data } = await _supabase.from('devices').select('*').eq('technician', currentTech).order('id', { ascending: false });
             if(data) { devices = data; refreshActiveView(); }
-        }
-
-        // ==============================================
-        // نظام المزامنة الذكية اللحظية (Smart Sync) للفني
-        // ==============================================
-        async function smartSyncTech() {
-            if(!currentTech) return;
-            let { data } = await _supabase.from('devices').select('id, status, expected_time, cost, new_fault, tracking_number, customer_name, chat').eq('technician', currentTech);
-            
-            if(data) {
-                let shouldRenderTable = false;
-                
-                data.forEach(dbDevice => {
-                    let localDev = devices.find(d => d.id === dbDevice.id);
-                    if(localDev) {
-                        // 🌟 سحب قرار العميل اللحظي لتحديث الجدول بدون ريفرش
-                        if(localDev.status !== dbDevice.status || localDev.cost !== dbDevice.cost || localDev.new_fault !== dbDevice.new_fault || localDev.expected_time !== dbDevice.expected_time) {
-                            localDev.status = dbDevice.status; localDev.cost = dbDevice.cost; localDev.new_fault = dbDevice.new_fault; localDev.expected_time = dbDevice.expected_time;
-                            shouldRenderTable = true;
-                        }
-                        
-                        // سحب الشات والتأكد من علامات القراءة
-                        let dbChatStr = JSON.stringify(dbDevice.chat || []);
-                        let localChatStr = JSON.stringify(localDev.chat || []);
-                        
-                        if(dbChatStr !== localChatStr) {
-                            if((dbDevice.chat||[]).length > (localDev.chat||[]).length) {
-                                let lastMsg = dbDevice.chat[dbDevice.chat.length - 1];
-                                if(lastMsg.sender === 'client') {
-                                    playMessagePing();
-                                    showDesktopNotification(`رسالة من: ${dbDevice.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
-                                }
-                            }
-                            localDev.chat = dbDevice.chat || [];
-                            shouldRenderTable = true;
-                            
-                            if(activeChatId && String(activeChatId) === String(dbDevice.id)) {
-                                renderChatMsgs(localDev.chat);
-                            }
-                        }
-                    } else {
-                        devices.unshift(dbDevice);
-                        shouldRenderTable = true;
-                    }
-                });
-                
-                if(shouldRenderTable) refreshActiveView();
-            }
         }
 
         function refreshActiveView() {
@@ -531,6 +589,7 @@
                     costCell = `<b style="color:#34d399; font-size:1rem;">${d.cost || 0} ${curConf.currency}</b>`;
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز منتهي.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
+                    // القائمة المنسدلة تتحدث تلقائياً حسب الحالة التي يختارها العميل
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#0f172a; color:#fff; border:2px solid var(--glass-border); padding:8px 10px; border-radius:12px; font-size:0.85rem; cursor:pointer; font-weight:800;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
@@ -576,25 +635,36 @@
             });
         }
 
+        // 🌟 إرسال الحالة المحدثة في الهواء للعميل
         async function updateDeviceStatus(id, val) { 
             let dev = devices.find(x => x.id === id);
-            if(dev) dev.status = val;
+            if(dev) {
+                dev.status = val;
+                sysChannel.send({ type: 'broadcast', event: 'status-update', payload: { deviceId: id, status: val }});
+            }
             refreshActiveView();
             await _supabase.from('devices').update({ status: val }).eq('id', id); 
         }
+
         async function updateExpected(id, val) { await _supabase.from('devices').update({ expected_time: val }).eq('id', id); }
         async function updateCost(id, val) { await _supabase.from('devices').update({ cost: val }).eq('id', id); }
         
+        // 🌟 إرسال العطل الجديد فوراً في الهواء للعميل
         async function sendFault(id) {
             let f = document.getElementById('fault-' + id).value.trim();
             if(!f) return;
             
-            // تحديث الجدول عند الفني فوراً قبل الرفع
             let dev = devices.find(x => x.id === id);
             if(dev) {
                 dev.new_fault = f;
                 dev.status = 'بانتظار موافقة العميل على التكلفة';
                 refreshActiveView();
+                
+                sysChannel.send({ 
+                    type: 'broadcast', 
+                    event: 'fault-update', 
+                    payload: { deviceId: id, fault: f, cost: dev.cost, status: dev.status } 
+                });
             }
 
             await _supabase.from('devices').update({ new_fault: f, status: 'بانتظار موافقة العميل على التكلفة' }).eq('id', id);
@@ -802,7 +872,7 @@
             if (hasUnread) markAsReadByTech(activeChatId);
         }
 
-        // إرسال علامة القراءة اللحظية من الفني
+        // 🌟 إرسال علامة القراءة في الهواء للعميل
         async function markAsReadByTech(chatId) {
             let d = devices.find(x => String(x.id) === String(chatId)); if(!d) return;
             let { data } = await _supabase.from('devices').select('chat').eq('id', chatId).single();
@@ -814,12 +884,15 @@
                 return m;
             });
             if(changed) {
+                // إرسال الإشعار اللحظي للعميل
+                sysChannel.send({ type: 'broadcast', event: 'read-receipt', payload: { deviceId: chatId, readTime: currentTime } });
+                
                 await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
-                d.chat = newChat; // منع تكرار الرفع
+                d.chat = newChat; 
             }
         }
 
-        async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
+        function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
             if(!text || !activeChatId) return;
@@ -831,17 +904,18 @@
             let msgId = Date.now().toString() + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 🌟 1. التحديث اللحظي للواجهة
             let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
             d.chat = localChat;
             renderChatMsgs(localChat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // 🌟 2. الرفع المباشر للداتابيز بدون طابور معرقل
-            let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
-            let dbChat = (data && data.chat) ? [...data.chat] : [];
-            dbChat.push(newMsg);
-            await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+            // 🌟 إرسال الرسالة في الهواء للعميل
+            if (sysChannel) {
+                sysChannel.send({ type: 'broadcast', event: 'chat-msg', payload: { deviceId: activeChatId, msg: newMsg } });
+            }
+
+            messageQueue.push(newMsg);
+            processMessageQueue();
         }
 
         async function toggleVoiceRecording() {
@@ -861,6 +935,8 @@
         }
 
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
+        
+        // 🌟 عداد المكالمات للفني مطابق للعميل
         function startCallTimer() {
             callSeconds = 0; if (callTimerInterval) clearInterval(callTimerInterval);
             let timerEl = document.getElementById('callTimerDisplay'); if (timerEl) { timerEl.style.display = "block"; timerEl.innerText = "00:00"; }
@@ -918,7 +994,7 @@
                     startCallTimer(); 
                 });
                 currentCall.on('close', endCurrentCall);
-            } catch(e) { showVipModal("تنبيه", "يرجى السماح بالمايك للرد", "🎙️️"); endCurrentCall(); }
+            } catch(e) { showVipModal("تنبيه", "يرجى السماح بالمايك للرد", "🎙️"); endCurrentCall(); }
         }
 
         function toggleMute() {
