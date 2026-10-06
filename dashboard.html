@@ -48,6 +48,7 @@
         .badge-returned { background: rgba(245, 158, 11, 0.2); color: var(--primary); border: 1px solid var(--primary); }
         .badge-inspect { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
         .badge-waiting { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid #f59e0b; }
+        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
         .action-btn { background: #1e293b; border: 1px solid var(--glass-border); color: #f8fafc; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 800; transition: 0.2s; }
         .action-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); }
         .whatsapp-btn { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; }
@@ -151,7 +152,7 @@
                 <select id="countrySelect" class="country-select" onchange="onCountryChanged(this.value)">
                     <option value="EG">🇪🇬 مصر (جنيه - 01xxxxxxxxx)</option>
                     <option value="SA">🇸🇦 السعودية (ر.س - 05xxxxxxxx)</option>
-                    <option value="AE">🇦🇪 الإمارات (د.إ - 05xxxxxxxx)</option>
+                    <option value="AE">🇦 الإمارات (د.إ - 05xxxxxxxx)</option>
                     <option value="KW">🇰🇼 الكويت (د.ك - xxxxxxxx)</option>
                 </select>
             </div>
@@ -267,11 +268,12 @@
         let currentTech = '';
         let sysChannel = null;
 
-        // 🌟 إعداد قناة الاتصال اللحظية الخاصة بالورشة
+        // 🌟 إعداد رادار الاتصال اللحظي الكامل للفني
         function setupTechBroadcast() {
             if (sysChannel) _supabase.removeChannel(sysChannel);
             sysChannel = _supabase.channel('shop-' + currentTech);
             
+            // 1. استقبال الرسائل اللحظية
             sysChannel.on('broadcast', { event: 'chat-msg' }, payload => {
                 let { deviceId, msg } = payload.payload;
                 let d = devices.find(x => String(x.id) === String(deviceId));
@@ -292,21 +294,34 @@
                 }
             });
 
+            // 2. تحديثات قرارات العميل (القبول/الرفض) وعلامات القراءة (✓✓)
             sysChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `technician=eq.${currentTech}` }, payload => {
                 let updated = payload.new;
                 if (!updated) return;
+                
                 let idx = devices.findIndex(x => x.id === updated.id);
                 if (idx !== -1) {
-                    let oldChat = devices[idx].chat || [];
-                    devices[idx] = updated;
-                    // الحفاظ على الرسائل المحلية إذا كانت الداتابيز متأخرة
-                    if (updated.chat && updated.chat.length < oldChat.length) {
-                        devices[idx].chat = oldChat;
+                    let oldChatStr = JSON.stringify(devices[idx].chat || []);
+                    let newChatStr = JSON.stringify(updated.chat || []);
+                    
+                    // تحديث الحالة فوراً في الداتا المحلية
+                    devices[idx].status = updated.status;
+                    devices[idx].cost = updated.cost;
+                    devices[idx].new_fault = updated.new_fault;
+                    devices[idx].expected_time = updated.expected_time;
+                    
+                    // إذا كان الشات قد تغير (وقت القراءة مثلاً)، حدثه فوراً
+                    if(oldChatStr !== newChatStr) {
+                        devices[idx].chat = updated.chat;
+                        if (activeChatId && String(activeChatId) === String(updated.id)) {
+                            renderChatMsgs(updated.chat);
+                        }
                     }
                 } else {
                     devices.unshift(updated);
                 }
-                refreshActiveView();
+                
+                refreshActiveView(); // سيقوم هذا التحديث بتعديل القوائم المنسدلة فوراً بناءً على قرار العميل!
             });
 
             sysChannel.subscribe();
@@ -337,7 +352,6 @@
         let audioCtx = null;
         let ringInterval = null;
 
-        // --- نظام طابور الرسائل (الخلفية) ---
         let messageQueue = [];
         let isProcessingQueue = false;
 
@@ -475,7 +489,7 @@
             initTechVoice(currentTech);
             
             await fetchDevicesInitial();
-            setupTechBroadcast(); // تشغيل الرادار السريع
+            setupTechBroadcast(); 
 
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
@@ -543,6 +557,7 @@
                     if (d.status.includes('تم تسليم')) badgeClass = 'badge-delivered';
                     else if (d.status.includes('مسترجع')) badgeClass = 'badge-returned';
                     else if (d.status.includes('بانتظار')) badgeClass = 'badge-waiting';
+                    else if (d.status.includes('رفض')) badgeClass = 'badge-rejected';
 
                     statusCell = `<span class="badge ${badgeClass}">${d.status}</span>`;
                     timeCell = `<span style="color:var(--text-sub); font-size:0.8rem; direction:ltr; display:inline-block; font-weight:bold;">${formatSimpleDate(d.expected_time)}</span>`;
@@ -550,11 +565,13 @@
                     costCell = `<b style="color:#34d399; font-size:1rem;">${d.cost || 0} ${curConf.currency}</b>`;
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز منتهي.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
+                    // القائمة المنسدلة الذكية (تُحدث فوراً من الداتا)
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#0f172a; color:#fff; border:2px solid var(--glass-border); padding:8px 10px; border-radius:12px; font-size:0.85rem; cursor:pointer; font-weight:800;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
                             <option value="جاري الإصلاح" ${d.status==='جاري الإصلاح'?'selected':''}>⚙️ إصلاح</option>
                             <option value="بانتظار موافقة العميل على التكلفة" ${d.status.includes('بانتظار')?'selected':''}>⏳ انتظار موافقة</option>
+                            <option value="تم رفض التكلفة من العميل" ${d.status.includes('رفض')?'selected':''}>❌ تم الرفض</option>
                             <option value="جاهز للاستلام" ${d.status==='جاهز للاستلام'?'selected':''}>✅ جاهز</option>
                             <option value="تم تسليم الجهاز للعميل" ${d.status.includes('تم تسليم')?'selected':''}>📦 تم التسليم</option>
                             <option value="مسترجع" ${d.status.includes('مسترجع')?'selected':''}>🔄 مسترجع</option>
@@ -597,9 +614,20 @@
         async function updateDeviceStatus(id, val) { await _supabase.from('devices').update({ status: val }).eq('id', id); }
         async function updateExpected(id, val) { await _supabase.from('devices').update({ expected_time: val }).eq('id', id); }
         async function updateCost(id, val) { await _supabase.from('devices').update({ cost: val }).eq('id', id); }
+        
+        // 🌟 إرسال العطل الجديد فوراً للعميل وتغيير الحالة
         async function sendFault(id) {
             let f = document.getElementById('fault-' + id).value.trim();
             if(!f) return;
+            
+            // تغيير الحالة المحلية فوراً للمظهر (Optimistic UI)
+            let dev = devices.find(x => x.id === id);
+            if(dev) {
+                dev.new_fault = f;
+                dev.status = 'بانتظار موافقة العميل على التكلفة';
+                refreshActiveView();
+            }
+
             await _supabase.from('devices').update({ new_fault: f, status: 'بانتظار موافقة العميل على التكلفة' }).eq('id', id);
             showVipModal("تم التحديث", "تم إرسال العطل لانتظار موافقة العميل.");
         }
@@ -805,6 +833,7 @@
             if (hasUnread) markAsReadByTech(activeChatId);
         }
 
+        // 🌟 إرسال علامة (✓✓) اللحظية من الفني
         async function markAsReadByTech(chatId) {
             let d = devices.find(x => String(x.id) === String(chatId)); if(!d) return;
             let { data } = await _supabase.from('devices').select('chat').eq('id', chatId).single();
@@ -838,11 +867,6 @@
             renderChatMsgs(localChat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // 🌟 إرسال النبضة اللحظية للعميل
-            if (sysChannel) {
-                sysChannel.send({ type: 'broadcast', event: 'chat-msg', payload: { deviceId: activeChatId, msg: newMsg } });
-            }
-
             messageQueue.push(newMsg);
             processMessageQueue();
         }
