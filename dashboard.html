@@ -277,7 +277,7 @@
         let devices = [];
         let currentTab = 'add';
         let activeChatId = null;
-
+        
         let myPeer = null;
         let currentCall = null;
         let localStream = null;
@@ -391,6 +391,16 @@
             }
         });
 
+        async function loadLiveAnnouncement() {
+            try {
+                let { data: adsData } = await _supabase.from('ads').select('*');
+                if (adsData && adsData.length > 0) {
+                    let adText = adsData[0].text || adsData[0].message || adsData[0].content || "عروض وخصومات خاصة لعملائنا الكرام!";
+                    document.getElementById('tickerContent').innerHTML = `<span class="ticker-text">✨ ${adText.trim()} ✨</span>`.repeat(4);
+                }
+            } catch (err) {}
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             currentTech = urlParams.get('user') || localStorage.getItem('currentUser');
@@ -401,6 +411,7 @@
             applyCountrySettings(currentCountry);
             checkNotificationPermission();
             initTechVoice(currentTech);
+            loadLiveAnnouncement();
             
             await fetchDevicesInitial();
 
@@ -421,7 +432,33 @@
         }
 
         // ==============================================
-        // 🌟 رادار الجداول (كل 3.5 ثواني) لعدم خنق الشبكة
+        // 🌟 خوارزمية الدمج الذكية (تمنع مسح أي رسالة)
+        // ==============================================
+        function mergeChat(localChat, dbChat) {
+            let mergedMap = new Map();
+            (localChat || []).forEach(m => mergedMap.set(m.id, m));
+            (dbChat || []).forEach(m => {
+                if (mergedMap.has(m.id)) {
+                    let existing = mergedMap.get(m.id);
+                    if (m.isRead && !existing.isRead) existing.isRead = true;
+                    existing.readTime = m.readTime || existing.readTime;
+                    mergedMap.set(m.id, existing);
+                } else {
+                    mergedMap.set(m.id, m);
+                }
+            });
+            let result = Array.from(mergedMap.values());
+            // الترتيب الآمن للرسائل بدون أعطال
+            result.sort((a, b) => {
+                let idA = a.id ? String(a.id).split('_')[0] : 0;
+                let idB = b.id ? String(b.id).split('_')[0] : 0;
+                return parseInt(idA) - parseInt(idB);
+            });
+            return result;
+        }
+
+        // ==============================================
+        // 🌟 رادار الجداول (كل 4 ثواني) لعدم خنق الشبكة
         // ==============================================
         let isTableSyncing = false;
         async function startTableSyncLoop() {
@@ -447,14 +484,15 @@
                                 let dbChatStr = JSON.stringify(dbDev.chat || []);
                                 let locChatStr = JSON.stringify(locDev.chat || []);
                                 if (dbChatStr !== locChatStr) {
+                                    let mergedChat = mergeChat(locDev.chat, dbDev.chat);
                                     if ((dbDev.chat || []).length > (locDev.chat || []).length) {
                                         let lastMsg = dbDev.chat[dbDev.chat.length - 1];
-                                        if (lastMsg.sender === 'client') {
+                                        if (lastMsg && lastMsg.sender === 'client') {
                                             playMessagePing();
                                             showDesktopNotification(`رسالة من ${dbDev.customer_name}`, "رسالة جديدة");
                                         }
                                     }
-                                    locDev.chat = dbDev.chat;
+                                    locDev.chat = mergedChat;
                                     needsRender = true;
                                 }
                             }
@@ -463,8 +501,7 @@
                     }
                 } catch(e) {}
                 
-                // راحة 3.5 ثانية للشبكة
-                await new Promise(res => setTimeout(res, 3500));
+                await new Promise(res => setTimeout(res, 4000));
             }
             isTableSyncing = false;
         }
@@ -484,17 +521,17 @@
                         if(data) {
                             let locDev = devices.find(d => String(d.id) === String(activeChatId));
                             if(locDev) {
-                                let dbChatStr = JSON.stringify(data.chat || []);
+                                let mergedChat = mergeChat(locDev.chat, data.chat);
+                                let mergedChatStr = JSON.stringify(mergedChat);
                                 let locChatStr = JSON.stringify(locDev.chat || []);
-                                if (dbChatStr !== locChatStr) {
-                                    locDev.chat = data.chat;
+                                if (mergedChatStr !== locChatStr) {
+                                    locDev.chat = mergedChat;
                                     renderChatMsgs(locDev.chat);
                                 }
                             }
                         }
                     } catch(e) {}
                 }
-                // راحة ثانية واحدة فقط للشات المفتوح ليكون لحـظي
                 await new Promise(res => setTimeout(res, 1000));
             }
         }
@@ -845,6 +882,7 @@
                 });
                 if(changed) {
                     await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
+                    d.chat = newChat;
                 }
             } catch(e) {}
         }
@@ -864,7 +902,7 @@
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // تحديث محلي
+            // تحديث محلي فوري
             d.chat = d.chat || [];
             d.chat.push(newMsg);
             renderChatMsgs(d.chat); 
@@ -935,10 +973,8 @@
                 call.on('stream', remoteStream => { 
                     stopCallRingtone(); document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
                     let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
-                    
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
-                    
                     startCallTimer(); 
                 });
                 call.on('close', endCurrentCall); call.on('error', endCurrentCall);
@@ -952,10 +988,8 @@
                 currentCall.on('stream', remoteStream => { 
                     document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
                     let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
-                    
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
-                    
                     startCallTimer(); 
                 });
                 currentCall.on('close', endCurrentCall);
@@ -969,12 +1003,7 @@
 
         function endCurrentCall() {
             stopCallRingtone(); stopCallTimer(); if(currentCall) { currentCall.close(); currentCall = null; }
-            
-            if(localStream) { 
-                localStream.getTracks().forEach(t => t.stop()); 
-                localStream = null; 
-            }
-            
+            if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
             document.getElementById('callScreen').classList.remove('active'); 
             let audio = document.getElementById('remoteAudio'); if(audio) audio.srcObject = null;
             isMuted = false; let btn = document.getElementById('btnMuteCall'); if (btn) { btn.classList.remove('muted'); btn.innerText = '🎤'; }

@@ -224,7 +224,7 @@
             ar: {
                 docTitle: "تتبع حالة الصيانة", searchHeader: "استعلام عن حالة الصيانة", searchBtn: "بحث",
                 searchPlaceholderEG: "أدخل رقم التتبع أو الهاتف...", searchPlaceholderSA: "أدخل رقم التتبع أو الهاتف...",
-                delivTitle: "تم تسليم جهازك بنجاح!", warrantyMsg: "🛡️ الضمان الذهبي مفعل لمدة 30 يوماً من الاستلام.",
+                delivTitle: "تم تسليم جهازك بنجاح!", warrantyMsg: "🛡️️ الضمان الذهبي مفعل لمدة 30 يوماً من الاستلام.",
                 retTitle: "تم استرجاع الجهاز", retDesc: "سعدنا بزيارتك ونتطلع لخدمتك بشكل أفضل دائماً.",
                 lblTrack: "رقم التتبع:", lblName: "العميل:", lblDevice: "الجهاز:", lblCostPaid: "التكلفة:",
                 lblProblem: "العطل:", lblDetails: "الملاحظات:", lblExpected: "وقت التسليم:", lblCost: "التكلفة:",
@@ -247,7 +247,7 @@
         let currentCountry = localStorage.getItem('app_country') || 'EG'; 
         let currentCurrency = 'ج.م';
         let activeDevice = null;
-        let isClientSyncing = false;
+        let syncInterval = null;
 
         let myPeer = null; 
         let currentCall = null; 
@@ -336,9 +336,19 @@
         function updateSearchPlaceholder() { document.getElementById('searchInput').placeholder = currentCountry === 'EG' ? I18N[currentLang].searchPlaceholderEG : I18N[currentLang].searchPlaceholderSA; }
         function changeCountry(val) { currentCountry = val; localStorage.setItem('app_country', val); currentCurrency = (val === 'EG') ? (currentLang === 'ar' ? 'ج.م' : 'EGP') : (val === 'SA' ? (currentLang === 'ar' ? 'ر.س' : 'SAR') : (val === 'AE' ? (currentLang === 'ar' ? 'د.إ' : 'AED') : (currentLang === 'ar' ? 'د.ك' : 'KWD'))); updateSearchPlaceholder(); if (activeDevice) updateUI(activeDevice); }
 
+        async function loadLiveAnnouncement() {
+            try {
+                let { data: adsData } = await _supabase.from('ads').select('*');
+                if (adsData && adsData.length > 0) {
+                    let adText = adsData[0].text || adsData[0].message || adsData[0].content || "عروض وخصومات خاصة لعملائنا الكرام!";
+                    document.getElementById('tickerContent').innerHTML = `<span class="ticker-text">✨ ${adText.trim()} ✨</span>`.repeat(4);
+                }
+            } catch (err) {}
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('langSelect').value = currentLang; document.getElementById('countrySelect').value = currentCountry;
-            applyLanguageUI(currentLang); changeCountry(currentCountry); checkNotificationPermission();
+            applyLanguageUI(currentLang); changeCountry(currentCountry); checkNotificationPermission(); loadLiveAnnouncement();
             const trackParam = new URLSearchParams(window.location.search).get('track');
             if (trackParam) { document.getElementById('searchInput').value = trackParam; searchDevice(trackParam); }
         });
@@ -352,7 +362,7 @@
 
         function showDeliveryOrReturnScreen(d) {
             document.getElementById('resultSection').style.display = 'none';
-            activeDevice = null; // يوقف الرادار
+            if(syncInterval) clearInterval(syncInterval);
 
             if (d.status.includes('تم تسليم')) {
                 document.getElementById('delivTrack').innerText = d.tracking_number; document.getElementById('delivName').innerText = d.customer_name;
@@ -381,15 +391,16 @@
             let returnedCard = document.getElementById('returnedCard'); let resultSection = document.getElementById('resultSection');
 
             deliveredCard.style.display = 'none'; returnedCard.style.display = 'none'; resultSection.style.display = 'none';
-            
             if (error || !data || data.length === 0) { 
                 msgBox.innerHTML = I18N[currentLang].noResult; msgBox.style.display = 'block'; 
                 activeDevice = null; 
+                if(syncInterval) clearInterval(syncInterval);
                 return; 
             }
 
             msgBox.style.display = 'none';
             activeDevice = data[0]; 
+            loadLiveAnnouncement();
 
             if(!skipHistory) {
                 const newUrl = window.location.pathname + "?track=" + encodeURIComponent(activeDevice.tracking_number);
@@ -402,69 +413,71 @@
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            // 🌟 تشغيل الرادار الذكي والآمن جداً
-            startClientSyncLoop();
+            // 🌟 الرادار المائي للعميل (استجابة سريعة كل 3 ثواني لتخفيف الضغط)
+            if(syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(smartSyncClient, 3000);
         }
 
-        // ==============================================
-        // الرادار المنيع للعميل (يمنع مسح الرسائل نهائياً)
-        // ==============================================
-        async function startClientSyncLoop() {
-            if(isClientSyncing) return;
-            isClientSyncing = true;
+        // 🌟 خوارزمية الدمج الذكية (تمنع مسح أي رسالة نهائياً)
+        function mergeChat(localChat, dbChat) {
+            let mergedMap = new Map();
+            (localChat || []).forEach(m => mergedMap.set(m.id, m));
+            (dbChat || []).forEach(m => {
+                if (mergedMap.has(m.id)) {
+                    let existing = mergedMap.get(m.id);
+                    if (m.isRead && !existing.isRead) existing.isRead = true;
+                    existing.readTime = m.readTime || existing.readTime;
+                    mergedMap.set(m.id, existing);
+                } else {
+                    mergedMap.set(m.id, m);
+                }
+            });
+            let result = Array.from(mergedMap.values());
+            // ترتيب الرسائل من الأقدم للأحدث بناءً على رقم الـ ID
+            result.sort((a, b) => parseInt(a.id.split('_')[0]) - parseInt(b.id.split('_')[0]));
+            return result;
+        }
+
+        let isSyncing = false;
+        async function smartSyncClient() {
+            if(!activeDevice || isSyncing) return;
+            isSyncing = true; 
             
-            while(activeDevice) {
-                try {
-                    let { data } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
-                    if(data) {
-                        let needsUiUpdate = false;
+            try {
+                let { data, error } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
+                if(data && !error) {
+                    let needsUiUpdate = false;
 
-                        if(data.status !== activeDevice.status || data.cost !== activeDevice.cost || data.new_fault !== activeDevice.new_fault || data.expected_time !== activeDevice.expected_time) {
-                            activeDevice.status = data.status; activeDevice.cost = data.cost; activeDevice.new_fault = data.new_fault; activeDevice.expected_time = data.expected_time;
-                            needsUiUpdate = true;
-                            if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { 
-                                showDeliveryOrReturnScreen(activeDevice); 
-                                break; 
-                            }
+                    if(data.status !== activeDevice.status || data.cost !== activeDevice.cost || data.new_fault !== activeDevice.new_fault || data.expected_time !== activeDevice.expected_time) {
+                        activeDevice.status = data.status; activeDevice.cost = data.cost; activeDevice.new_fault = data.new_fault; activeDevice.expected_time = data.expected_time;
+                        needsUiUpdate = true;
+                        if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { 
+                            showDeliveryOrReturnScreen(activeDevice); 
+                            isSyncing = false;
+                            return; 
                         }
-
-                        let dbChatStr = JSON.stringify(data.chat || []);
-                        let localChatStr = JSON.stringify(activeDevice.chat || []);
-                        
-                        // تحديث الشات فقط إذا كان السيرفر أحدث من الشاشة
-                        if(dbChatStr !== localChatStr) {
-                            let dbChat = data.chat || [];
-                            let locChat = activeDevice.chat || [];
-                            
-                            if (dbChat.length > locChat.length) {
-                                let lastMsg = dbChat[dbChat.length - 1];
-                                if(lastMsg.sender === 'tech') playMessagePing();
-                                activeDevice.chat = dbChat;
-                                renderChat(activeDevice.chat);
-                            } else if (dbChat.length === locChat.length) {
-                                let changed = false;
-                                for(let i=0; i<locChat.length; i++) {
-                                    if(dbChat[i] && dbChat[i].isRead !== locChat[i].isRead) {
-                                        locChat[i].isRead = dbChat[i].isRead;
-                                        locChat[i].readTime = dbChat[i].readTime;
-                                        changed = true;
-                                    }
-                                }
-                                if(changed) {
-                                    activeDevice.chat = locChat;
-                                    renderChat(locChat);
-                                }
-                            }
-                        }
-
-                        if(needsUiUpdate) updateUI(activeDevice);
                     }
-                } catch(e) {}
-                
-                // ⏳ ينتظر ثانية واحدة بعد الانتهاء، ثم يسأل السيرفر مجدداً
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            isClientSyncing = false;
+
+                    // استخدام خوارزمية الدمج الذكية لضمان عدم ضياع أي رسالة
+                    let mergedChat = mergeChat(activeDevice.chat, data.chat);
+                    let dbChatStr = JSON.stringify(data.chat || []);
+                    let localChatStr = JSON.stringify(activeDevice.chat || []);
+                    
+                    if(JSON.stringify(mergedChat) !== localChatStr) {
+                        // إشعار صوتي إذا كان هناك رسالة جديدة من الفني
+                        if ((data.chat || []).length > (activeDevice.chat || []).length) {
+                            let lastMsg = data.chat[data.chat.length - 1];
+                            if (lastMsg && lastMsg.sender === 'tech') playMessagePing();
+                        }
+                        activeDevice.chat = mergedChat;
+                        renderChat(activeDevice.chat);
+                    }
+
+                    if(needsUiUpdate) updateUI(activeDevice);
+                }
+            } catch(e) {}
+            
+            isSyncing = false; 
         }
 
         function updateUI(d) {
@@ -475,7 +488,7 @@
             document.getElementById('resCost').innerText = (d.cost || '0') + ' ' + currentCurrency; document.getElementById('resStatus').innerText = d.status;
 
             let extraBox = document.getElementById('extraNoticeBox');
-            if(d.status && d.status.includes('بانتظار موافقة')) {
+            if(d.status && d.status.includes('بانتظار موافقة العميل')) {
                 extraBox.style.display = 'block';
                 document.getElementById('extraNoticeText').innerText = d.new_fault ? `${d.new_fault} (${d.cost} ${currentCurrency})` : `${d.cost} ${currentCurrency}`;
                 document.getElementById('approveBtnContainer').innerHTML = `<button class="approve-btn" onclick="sendApproval(true)">${dict.approveBtn}</button> <button class="reject-btn" onclick="sendApproval(false)">${dict.rejectBtn}</button>`;
@@ -549,9 +562,6 @@
             } catch(e) {}
         }
 
-        // ==============================================
-        // إرسال نظيف وسريع جداً (Push Array)
-        // ==============================================
         async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
@@ -562,23 +572,21 @@
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 1. تحديث شاشة العميل فوراً
+            // 1. التحديث المحلي الفوري
             activeDevice.chat = activeDevice.chat || [];
             activeDevice.chat.push(newMsg);
             renderChat(activeDevice.chat);
             setTimeout(scrollToBottomChat, 50);
 
-            // 2. الرفع المباشر البسيط للسيرفر (بدون ترتيب)
+            // 2. الرفع المباشر والدمج الذكي
             try {
                 let { data, error } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
                 if(error) throw error;
-                let dbChat = data.chat || [];
-                dbChat.push(newMsg);
-                let { error: updateErr } = await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-                if(updateErr) throw updateErr;
-            } catch(e) {
-                alert("حدث خطأ أثناء الإرسال! تأكد من اتصالك بالإنترنت.");
-            }
+                
+                let mergedChat = mergeChat(activeDevice.chat, data.chat);
+                await _supabase.from('devices').update({ chat: mergedChat }).eq('id', activeDevice.id);
+                activeDevice.chat = mergedChat;
+            } catch(e) {}
         }
 
         async function toggleVoiceRecording() {
