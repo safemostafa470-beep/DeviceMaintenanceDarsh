@@ -405,9 +405,9 @@
             
             await fetchDevicesInitial();
 
-            // 🌟 تشغيل المزامنة الذكية السريعة كل ثانية ونصف (بدون ريفرش) 🌟
+            // 🌟 الرادار السريع الآمن للفني (كل ثانية واحدة فقط) 🌟
             if(syncInterval) clearInterval(syncInterval);
-            syncInterval = setInterval(smartSyncTech, 1500);
+            syncInterval = setInterval(smartSyncTech, 1000);
 
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
@@ -422,54 +422,74 @@
         }
 
         // ==============================================
-        // رادار المزامنة الذكية (Smart Sync) للفني
+        // نظام المزامنة الذكية (Smart Sync) والقفل الآمن للفني
         // ==============================================
+        let isSyncing = false;
         async function smartSyncTech() {
-            if(!currentTech) return;
+            if(!currentTech || isSyncing) return;
+            isSyncing = true; // قفل الرادار لمنع اختناق الشبكة
+            
             try {
-                let { data } = await _supabase.from('devices').select('id, status, expected_time, cost, new_fault, tracking_number, customer_name, chat').eq('technician', currentTech).order('id', { ascending: false });
-                if(!data) return;
+                let { data, error } = await _supabase.from('devices').select('id, status, expected_time, cost, new_fault, tracking_number, customer_name, chat').eq('technician', currentTech).order('id', { ascending: false });
+                if(data && !error) {
+                    let needsTableRender = false;
+                    let needsChatRender = false;
 
-                let needsTableRender = false;
-                let needsChatRender = false;
+                    data.forEach(dbDev => {
+                        let locDev = devices.find(d => d.id === dbDev.id);
+                        if(!locDev) { 
+                            devices.unshift(dbDev); 
+                            needsTableRender = true; 
+                        } else {
+                            // 1. تحديث الحالات (تغيير القائمة المنسدلة تلقائياً إذا وافق العميل)
+                            let stateChanged = locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time;
+                            if(stateChanged) {
+                                locDev.status = dbDev.status; locDev.cost = dbDev.cost; locDev.new_fault = dbDev.new_fault; locDev.expected_time = dbDev.expected_time;
+                                needsTableRender = true;
+                            }
 
-                data.forEach(dbDev => {
-                    let locDev = devices.find(d => d.id === dbDev.id);
-                    if(!locDev) { 
-                        devices.unshift(dbDev); 
-                        needsTableRender = true; 
-                    } else {
-                        // 1. تحديث الحالات (تغيير القائمة المنسدلة بناءً على قرار العميل)
-                        let stateChanged = locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time;
-                        let dbChatStr = JSON.stringify(dbDev.chat || []);
-                        let locChatStr = JSON.stringify(locDev.chat || []);
-                        let chatChanged = dbChatStr !== locChatStr;
-
-                        if(stateChanged || chatChanged) {
-                            locDev.status = dbDev.status; locDev.cost = dbDev.cost; locDev.new_fault = dbDev.new_fault; locDev.expected_time = dbDev.expected_time;
+                            // 2. تحديث الشات بحماية صارمة تمنع مسح الرسائل الجديدة
+                            let dbChat = dbDev.chat || [];
+                            let localChat = locDev.chat || [];
                             
-                            if(chatChanged) {
-                                if((dbDev.chat||[]).length > (locDev.chat||[]).length) {
-                                    let lastMsg = dbDev.chat[dbDev.chat.length - 1];
-                                    if(lastMsg.sender === 'client') {
-                                        playMessagePing();
-                                        showDesktopNotification(`رسالة من ${dbDev.customer_name}`, "رسالة جديدة");
+                            // إذا أرسل العميل رسالة جديدة
+                            if (dbChat.length > localChat.length) {
+                                let lastMsg = dbChat[dbChat.length - 1];
+                                if(lastMsg.sender === 'client') {
+                                    playMessagePing();
+                                    showDesktopNotification(`رسالة من ${dbDev.customer_name}`, "رسالة جديدة");
+                                }
+                                locDev.chat = dbChat;
+                                needsTableRender = true;
+                                if(activeChatId && String(activeChatId) === String(dbDev.id)) needsChatRender = true;
+                            } 
+                            // تحديث علامات القراءة (✓✓)
+                            else if (dbChat.length === localChat.length) {
+                                let receiptChanged = false;
+                                for (let i = 0; i < localChat.length; i++) {
+                                    if (dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) {
+                                        localChat[i].isRead = dbChat[i].isRead;
+                                        localChat[i].readTime = dbChat[i].readTime;
+                                        receiptChanged = true;
                                     }
                                 }
-                                locDev.chat = dbDev.chat;
-                                if(activeChatId && String(activeChatId) === String(dbDev.id)) needsChatRender = true;
+                                if(receiptChanged) {
+                                    needsTableRender = true;
+                                    if(activeChatId && String(activeChatId) === String(dbDev.id)) needsChatRender = true;
+                                }
                             }
-                            needsTableRender = true;
                         }
-                    }
-                });
+                    });
 
-                if(needsTableRender) refreshActiveView();
-                if(needsChatRender) {
-                    let activeD = devices.find(d => String(d.id) === String(activeChatId));
-                    if(activeD) renderChatMsgs(activeD.chat);
+                    if(needsTableRender) refreshActiveView();
+                    if(needsChatRender) {
+                        let activeD = devices.find(d => String(d.id) === String(activeChatId));
+                        if(activeD) renderChatMsgs(activeD.chat);
+                    }
                 }
             } catch(e) {}
+            
+            isSyncing = false; // فتح القفل للرادار التالي
         }
 
         function refreshActiveView() {
@@ -534,6 +554,7 @@
                     costCell = `<b style="color:#34d399; font-size:1rem;">${d.cost || 0} ${curConf.currency}</b>`;
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز منتهي.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
+                    // القائمة المنسدلة تتغير تلقائياً حسب الحالة التي يختارها العميل
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#0f172a; color:#fff; border:2px solid var(--glass-border); padding:8px 10px; border-radius:12px; font-size:0.85rem; cursor:pointer; font-weight:800;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
@@ -571,7 +592,7 @@
                             <div style="display:flex; gap:6px; justify-content:center;">
                                 ${chatBtn}
                                 <button class="action-btn whatsapp-btn" onclick="sendWhatsappMsg('${d.id}')" title="مراسلة واتساب">📱</button>
-                                <button class="action-btn print-btn" onpointerdown="event.preventDefault(); printReceipt('${d.id}')" title="طباعة فاتورة">🖨️</button>
+                                <button class="action-btn print-btn" onpointerdown="event.preventDefault(); printReceipt('${d.id}')" title="طباعة فاتورة">🖨️️</button>
                             </div>
                         </td>
                     </tr>
@@ -593,7 +614,7 @@
             let f = document.getElementById('fault-' + id).value.trim();
             if(!f) return;
             
-            // 🌟 تغيير محلي فوري لإشعار الفني
+            // تحديث محلي فوراً ليظهر أمام الفني
             let dev = devices.find(x => x.id === id);
             if(dev) {
                 dev.new_fault = f;
@@ -819,6 +840,7 @@
                 });
                 if(changed) {
                     await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
+                    d.chat = newChat;
                 }
             } catch(e) {}
         }
@@ -835,18 +857,20 @@
             let msgId = Date.now().toString() + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 🌟 1. التحديث اللحظي للواجهة 🌟
+            // التحديث المحلي الفوري
             let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
             d.chat = localChat;
             renderChatMsgs(localChat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // 🌟 2. الرفع المباشر للداتابيز بدون طابور معرقل 🌟
+            // الرفع الآمن للداتابيز بدون إيقافك عن العمل
             try {
                 let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
                 let dbChat = (data && data.chat) ? [...data.chat] : [];
-                dbChat.push(newMsg);
-                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                if(!dbChat.find(x => x.id === msgId)) {
+                    dbChat.push(newMsg);
+                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                }
             } catch(e) {}
         }
 
