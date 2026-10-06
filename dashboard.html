@@ -12,26 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --bg-deep: #0f172a; 
-            --card-surface: #1e293b; 
-            --primary: #f59e0b; 
-            --primary-glow: rgba(245, 158, 11, 0.4);
-            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            --text-main: #f8fafc;
-            --text-sub: #cbd5e1;
-            --glass-border: #334155;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-        }
-
+        :root { --bg-deep: #0f172a; --card-surface: #1e293b; --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.4); --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); --text-main: #f8fafc; --text-sub: #cbd5e1; --glass-border: #334155; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-deep); color: var(--text-main); min-height: 100vh; padding: 15px 12px; font-size: 15px; overscroll-behavior: none; }
-
         .notif-banner { width: 100%; background: var(--primary); color: #000; padding: 10px 16px; font-size: 0.95rem; font-weight: 800; display: none; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .notif-btn { background: #000; color: var(--primary); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 900; cursor: pointer; font-size: 0.85rem; }
-
         .top-nav { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 16px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 14px; }
         .nav-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .shop-info { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.05rem; color: var(--primary); }
@@ -39,45 +24,36 @@
         .country-select-box { display: flex; align-items: center; gap: 6px; background: #0f172a; border: 1px solid var(--glass-border); padding: 8px 14px; border-radius: 12px; }
         .country-select { background: transparent; color: #ffffff; border: none; outline: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
         .country-select option { background: #1e293b; color: #fff; }
-
         .nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .nav-btn { background: #0f172a; border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 0.9rem; font-weight: 800; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
         .nav-btn.active { background: var(--accent-gradient); color: #000; border-color: transparent; box-shadow: 0 6px 20px var(--primary-glow); font-weight: 900; }
         .logout-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 8px 16px; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 0.85rem; }
-        
         .card { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 24px 20px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         h2 { font-size: 1.25rem; color: var(--primary); margin-bottom: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
-
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-sub); font-weight: 800; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--glass-border); background: #0f172a; color: white; font-size: 16px; font-weight: 700; outline: none; transition: 0.2s; }
         .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
         .form-group textarea { resize: vertical; height: 85px; }
-
         button.primary-btn { background: var(--accent-gradient); color: #000; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 1rem; box-shadow: 0 8px 24px var(--primary-glow); transition: 0.2s; width: 100%; }
         button.primary-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-        
         .search-filter-bar input { width: 100%; padding: 14px 18px; border-radius: 14px; border: 2px solid var(--glass-border); background: #0f172a; color: white; font-size: 16px; font-weight: 700; outline: none; margin-bottom: 16px; }
         .search-filter-bar input:focus { border-color: var(--primary); }
-        
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 16px; border: 2px solid var(--glass-border); background: #0f172a; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 950px; font-weight: 700; }
         th, td { padding: 14px 16px; text-align: center; border-bottom: 1px solid var(--glass-border); white-space: nowrap; }
         th { background: rgba(245, 158, 11, 0.1); color: var(--primary); font-weight: 900; font-size: 0.95rem; }
-
         .badge { display: inline-block; padding: 6px 12px; border-radius: 10px; font-weight: 900; font-size: 0.8rem; }
         .badge-delivered { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
         .badge-returned { background: rgba(245, 158, 11, 0.2); color: var(--primary); border: 1px solid var(--primary); }
         .badge-inspect { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
         .badge-waiting { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid #f59e0b; }
-
         .action-btn { background: #1e293b; border: 1px solid var(--glass-border); color: #f8fafc; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 800; transition: 0.2s; }
         .action-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); }
         .whatsapp-btn { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; }
         .whatsapp-btn:hover { background: #10b981; color: #000; }
         .print-btn { background: rgba(245, 158, 11, 0.15); border-color: var(--primary); color: var(--primary); }
         .print-btn:hover { background: var(--primary); color: #000; }
-
         .report-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px; }
         .stat-card { background: #0f172a; border: 2px solid var(--glass-border); padding: 18px; border-radius: 16px; text-align: center; }
         .stat-card .val { font-size: 1.8rem; font-weight: 900; margin-top: 6px; }
@@ -86,29 +62,22 @@
         .filter-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
         .filter-item label { font-size: 0.85rem; color: var(--text-sub); font-weight: 800; }
         .filter-item input, .filter-item select { padding: 10px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; outline: none; font-size: 16px; font-weight: 700; }
-
         .chat-container-card { background: #0b1120; border: 2px solid var(--primary); border-radius: 20px; padding: 14px; margin-top: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); transition: all 0.3s ease; }
         .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--glass-border); padding-bottom: 12px; }
         .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; box-shadow: 0 4px 15px rgba(16,185,129,0.4); animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); } 70% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
-
         .chat-msgs { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #1e293b; border-radius: 14px; margin-bottom: 14px; border: 2px solid var(--glass-border); scroll-behavior: smooth; }
         .chat-msg-item { padding: 12px 16px; border-radius: 14px; max-width: 82%; line-height: 1.6; font-size: 0.95rem; font-weight: 700; display: flex; flex-direction: column; }
-        
         .chat-msg-tech { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); align-self: flex-start; color: #fde68a; text-align: start; border-top-right-radius: 4px; }
         .chat-msg-client { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); align-self: flex-end; color: #f8fafc; text-align: start; border-top-left-radius: 4px; }
-        
         .chat-img-thumb { max-width: 200px; max-height: 200px; border-radius: 12px; margin-top: 6px; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
-        
         .chat-input-row { display: flex; gap: 6px; align-items: center; width: 100%; }
         .chat-input-row input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; font-size: 15px; font-weight: 700; outline: none; transition: 0.2s; }
         .chat-input-row input:focus { border-color: var(--primary); }
         .icon-action-btn { background: #1e293b; border: 2px solid var(--glass-border); color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; transition: 0.2s; flex-shrink: 0; }
         .icon-action-btn:hover { background: rgba(245, 158, 11, 0.2); color: var(--primary); border-color: var(--primary); }
         .chat-input-row .primary-btn { flex-shrink: 0; white-space: nowrap; width: auto !important; padding: 12px 16px !important; margin: 0; }
-        
         .voice-btn.recording { background: #ef4444; color: white; border-color: #ef4444; animation: pulse-record 1s infinite; }
-
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
         .call-avatar { width: 120px; height: 120px; background: var(--accent-gradient); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 24px; animation: pulse-avatar 1.5s infinite; }
@@ -118,10 +87,8 @@
         .btn-answer-call { background: #10b981; color: white; display: none; }
         .btn-mute-call { background: rgba(255,255,255,0.15); color: white; font-size: 1.5rem; }
         .btn-mute-call.muted { background: #f59e0b; }
-
         .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .lightbox-modal img { max-width: 95%; max-height: 85%; border-radius: 16px; border: 3px solid var(--primary); }
-
         .vip-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 20000; }
         .vip-modal-box { background: #1e293b; border: 2px solid var(--primary); box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 30px var(--primary-glow); width: 90%; max-width: 440px; border-radius: 24px; padding: 28px; text-align: center; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -129,7 +96,6 @@
         .vip-modal-title { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 10px; }
         .vip-modal-msg { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 24px; line-height: 1.6; font-weight: 700; }
         .vip-modal-btn { background: var(--accent-gradient); color: #000; border: none; padding: 12px 35px; border-radius: 14px; font-weight: 900; font-size: 1.05rem; cursor: pointer; }
-
         @media print {
             body > *:not(#printAreaWrapper) { display: none !important; }
             #printAreaWrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
@@ -245,7 +211,7 @@
             <div class="chat-msgs" id="chatMsgsDiv"></div>
             <div class="chat-input-row">
                 <input type="text" id="chatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsg()">
-                <button class="icon-action-btn" onpointerdown="event.preventDefault(); document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼️️</button>
+                <button class="icon-action-btn" onpointerdown="event.preventDefault(); document.getElementById('chatImageInput').click()" title="إرسال صورة للعميل">🖼</button>
                 <button class="icon-action-btn voice-btn" id="voiceRecordBtn" onpointerdown="event.preventDefault(); toggleVoiceRecording()" title="تسجيل صوت">🎙</button>
                 <button class="primary-btn" onpointerdown="event.preventDefault(); sendTechMsg()">إرسال</button>
             </div>
@@ -298,16 +264,53 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2eGt4bWt0a3hhd3B0YnJxdHV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDY2MTcsImV4cCI6MjEwNjAyMjYxN30.NkqXPEpMf6VFE3nFQ1V7T5HyjfoxIrT_apKh7S6a_14';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 🌟 قناة البث اللحظي السريع جداً (Supabase Broadcast) 🌟
-        const sysChannel = _supabase.channel('global-chat-channel');
-        sysChannel.on('broadcast', { event: 'new-msg' }, (payload) => {
-            let devId = payload.payload.deviceId;
-            if (activeChatId && String(activeChatId) === String(devId)) {
-                smartSyncTechChat(); // اسحب الرسالة داخل الشات المفتوح فوراً
-            } else if (devices.some(d => String(d.id) === String(devId))) {
-                fastUpdateDeviceBadge(devId); // حدّث زر الشات لـ "جديد" وشغل إشعار للمهندس
-            }
-        }).subscribe();
+        let currentTech = '';
+        let sysChannel = null;
+
+        // 🌟 إعداد قناة الاتصال اللحظية الخاصة بالورشة
+        function setupTechBroadcast() {
+            if (sysChannel) _supabase.removeChannel(sysChannel);
+            sysChannel = _supabase.channel('shop-' + currentTech);
+            
+            sysChannel.on('broadcast', { event: 'chat-msg' }, payload => {
+                let { deviceId, msg } = payload.payload;
+                let d = devices.find(x => String(x.id) === String(deviceId));
+                if (d) {
+                    if(!d.chat) d.chat = [];
+                    if(!d.chat.find(x => x.id === msg.id)) {
+                        d.chat.push(msg);
+                        if (activeChatId && String(activeChatId) === String(deviceId)) {
+                            renderChatMsgs(d.chat);
+                            playMessagePing();
+                            markAsReadByTech(deviceId);
+                        } else {
+                            refreshActiveView();
+                            playMessagePing();
+                            showDesktopNotification(`رسالة جديدة من: ${d.customer_name}`, msg.isImage ? "أرسل صورة" : (msg.isVoice ? "رسالة صوتية" : msg.text));
+                        }
+                    }
+                }
+            });
+
+            sysChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `technician=eq.${currentTech}` }, payload => {
+                let updated = payload.new;
+                if (!updated) return;
+                let idx = devices.findIndex(x => x.id === updated.id);
+                if (idx !== -1) {
+                    let oldChat = devices[idx].chat || [];
+                    devices[idx] = updated;
+                    // الحفاظ على الرسائل المحلية إذا كانت الداتابيز متأخرة
+                    if (updated.chat && updated.chat.length < oldChat.length) {
+                        devices[idx].chat = oldChat;
+                    }
+                } else {
+                    devices.unshift(updated);
+                }
+                refreshActiveView();
+            });
+
+            sysChannel.subscribe();
+        }
 
         const COUNTRY_CONFIGS = {
             EG: { name: 'مصر', currency: 'ج.م', dialCode: '20', placeholder: '01xxxxxxxxx' },
@@ -317,11 +320,9 @@
         };
 
         let currentCountry = localStorage.getItem('app_country') || 'EG';
-        let currentTech = '';
         let devices = [];
         let currentTab = 'add';
         let activeChatId = null;
-        let chatPollInterval = null;
 
         let myPeer = null;
         let currentCall = null;
@@ -336,7 +337,7 @@
         let audioCtx = null;
         let ringInterval = null;
 
-        // --- طابور الرسائل السريع ---
+        // --- نظام طابور الرسائل (الخلفية) ---
         let messageQueue = [];
         let isProcessingQueue = false;
 
@@ -349,12 +350,11 @@
                 try {
                     let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
                     let dbChat = (data && data.chat) ? [...data.chat] : [];
-                    dbChat.push(msg);
-                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    if(!dbChat.find(x => x.id === msg.id)) {
+                        dbChat.push(msg);
+                        await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    }
                     messageQueue.shift(); 
-                    
-                    // 🌟 إرسال نبضة فورية للعميل
-                    sysChannel.send({ type: 'broadcast', event: 'new-msg', payload: { deviceId: activeChatId } });
                 } catch(e) {
                     console.error("Queue error:", e);
                     break;
@@ -475,6 +475,7 @@
             initTechVoice(currentTech);
             
             await fetchDevicesInitial();
+            setupTechBroadcast(); // تشغيل الرادار السريع
 
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
@@ -486,52 +487,6 @@
         async function fetchDevicesInitial() {
             let { data } = await _supabase.from('devices').select('*').eq('technician', currentTech).order('id', { ascending: false });
             if(data) { devices = data; refreshActiveView(); }
-        }
-
-        async function fastUpdateDeviceBadge(id) {
-            let { data } = await _supabase.from('devices').select('chat, customer_name').eq('id', id).single();
-            if (data) {
-                 let localDev = devices.find(d => String(d.id) === String(id));
-                 if (localDev) {
-                     if (data.chat && data.chat.length > (localDev.chat || []).length) {
-                         localDev.chat = data.chat;
-                         let lastMsg = data.chat[data.chat.length - 1];
-                         if (lastMsg.sender === 'client') {
-                             playMessagePing();
-                             showDesktopNotification(`رسالة من: ${data.customer_name}`, lastMsg.isImage ? "صورة" : (lastMsg.isVoice ? "صوت" : lastMsg.text));
-                         }
-                     }
-                     refreshActiveView();
-                 }
-            }
-        }
-
-        async function smartSyncTechChat() {
-            if(!activeChatId) return;
-            let d = devices.find(x => String(x.id) === String(activeChatId)); if(!d) return;
-
-            let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
-            if(data && data.chat) {
-                let dbChat = data.chat || [];
-                let localChat = d.chat || [];
-                
-                let needsUpdate = false;
-                if (dbChat.length > localChat.length) needsUpdate = true;
-                else {
-                    for(let i=0; i<localChat.length; i++) {
-                        if(dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) needsUpdate = true;
-                    }
-                }
-                
-                if (needsUpdate) {
-                    if (dbChat.length > localChat.length) {
-                        let lastMsg = dbChat[dbChat.length - 1];
-                        if (lastMsg.sender === 'client') playMessagePing();
-                    }
-                    d.chat = dbChat;
-                    renderChatMsgs(dbChat);
-                }
-            }
         }
 
         function refreshActiveView() {
@@ -799,7 +754,6 @@
         function closeChat(skipHistory = false) { 
             document.getElementById('chatBoxContainer').style.display = 'none'; 
             activeChatId = null; 
-            if(chatPollInterval) clearInterval(chatPollInterval);
             updateURLState(skipHistory);
         }
 
@@ -812,11 +766,6 @@
             document.getElementById('chatTargetTitle').innerText = `💬 محادثة العميل: ${d.customer_name} (${d.tracking_number})`;
             
             renderChatMsgs(d.chat);
-            
-            if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(smartSyncTechChat, 1000); // مزامنة طوارئ احتياطية
-            smartSyncTechChat();
-            
             updateURLState(skipHistory);
         }
 
@@ -881,13 +830,19 @@
             
             if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); }
 
-            let newMsg = { sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
+            let msgId = Date.now().toString() + Math.floor(Math.random()*1000);
+            let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
             let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
             d.chat = localChat;
             renderChatMsgs(localChat); 
             setTimeout(scrollToBottomChat, 50);
             
+            // 🌟 إرسال النبضة اللحظية للعميل
+            if (sysChannel) {
+                sysChannel.send({ type: 'broadcast', event: 'chat-msg', payload: { deviceId: activeChatId, msg: newMsg } });
+            }
+
             messageQueue.push(newMsg);
             processMessageQueue();
         }
