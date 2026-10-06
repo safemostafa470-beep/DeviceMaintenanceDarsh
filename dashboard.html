@@ -6,225 +6,246 @@
     <title>لوحة الفني - VIP</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0b1120; --card-bg: #1e293b; --primary: #3b82f6; --primary-hover: #2563eb;
-            --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --text-main: #f8fafc;
-            --text-muted: #94a3b8; --border: #334155; --gradient: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
-            --chat-tech: #005c4b; --chat-client: #202c33; --chat-bg: #0b141a;
+            /* ألوان احترافية هادئة وفخمة */
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #3b82f6;
+            --primary-glow: #60a5fa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --chat-tech: #0f766e;
+            --chat-client: #1e293b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; padding: 15px; padding-top: 90px; }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
 
-        .toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 1rem; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 100000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 1rem; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 100000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; }
         .toast.show { top: 20px; }
-        .toast.info { background: var(--primary); }
+        .toast.error { background: var(--danger); }
 
-        .top-nav { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.95); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; backdrop-filter: blur(10px); flex-wrap: wrap; gap: 15px; }
-        .nav-brand { font-size: 1.1rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        .nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .nav-btn { background: #0f172a; border: 1px solid var(--border); color: var(--text-main); padding: 10px 18px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; font-weight: 700; transition: 0.3s; }
-        .nav-btn.active, .nav-btn:hover { background: var(--gradient); color: #fff; border-color: transparent; }
-        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 10px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        /* منطقة الطباعة المعزولة */
+        #printAreaWrapper { display: none; background: #fff; color: #000; position: absolute; top: 0; left: 0; width: 100%; min-height: 100vh; z-index: 999999; padding: 20px; }
+
+        /* المحتوى الأساسي */
+        #mainContentWrapper { padding: 15px; max-width: 1400px; margin: auto; }
+
+        /* الهيدر الأنيق */
+        .top-header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .brand { font-size: 1.2rem; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+
+        /* شريط التنقل الأفقي (لا يتداخل أبداً) */
+        .tabs-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        .tab-btn { flex-shrink: 0; background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted); padding: 12px 24px; border-radius: 30px; font-size: 1rem; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
 
         .section-content { display: none; animation: fadeIn 0.4s; }
         .section-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        h2 { color: var(--text-main); margin-bottom: 25px; font-weight: 900; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
 
-        .search-bar { width: 100%; padding: 18px; border-radius: 14px; border: 1px solid var(--border); background: #0f172a; color: #fff; font-size: 1.05rem; outline: none; margin-bottom: 20px; transition: 0.3s; }
-        .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        /* خانات إدخال مكبرة ومريحة */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 1rem; color: var(--text-muted); font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-dark); color: #fff; outline: none; font-size: 1.05rem; font-weight: 600; transition: 0.3s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .form-group textarea { height: 100px; resize: vertical; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-muted); font-weight: bold; }
-        .form-group input, .form-group textarea { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: #0f172a; color: #fff; outline: none; font-size: 1.05rem; }
-        .form-group textarea { height: 80px; resize: vertical; }
+        button.primary-btn { background: var(--primary); color: #fff; border: none; padding: 16px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 1.1rem; width: 100%; transition: 0.3s; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        button.primary-btn:hover { background: var(--primary-glow); }
 
-        button.primary-btn { background: var(--gradient); color: #fff; border: none; padding: 15px 25px; border-radius: 14px; font-weight: 900; cursor: pointer; font-size: 1.05rem; width: 100%; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4); }
+        .search-bar { width: 100%; padding: 16px 20px; border-radius: 16px; border: 2px solid var(--border); background: var(--bg-dark); color: #fff; font-size: 1.05rem; font-weight: bold; outline: none; margin-bottom: 20px; transition: 0.3s; }
+        .search-bar:focus { border-color: var(--primary); }
 
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); background: #0f172a; }
-        table { width: 100%; border-collapse: collapse; font-size: 1rem; min-width: 1200px; }
-        th, td { padding: 18px 15px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
-        th { background: rgba(59, 130, 246, 0.1); color: var(--primary); font-weight: 800; font-size: 1.05rem; }
-        tr:hover { background: rgba(255, 255, 255, 0.02); }
+        /* تصميم الجداول */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); background: var(--bg-dark); }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+        th, td { padding: 18px 16px; text-align: center; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 1rem; font-weight: 600; }
+        th { background: rgba(59, 130, 246, 0.1); color: var(--primary-glow); font-weight: 900; font-size: 1.05rem; }
+        tr:hover { background: rgba(255, 255, 255, 0.03); }
 
-        .status-select { padding: 12px; border-radius: 10px; background: #1e293b; color: #fff; border: 1px solid var(--border); font-size: 1rem; font-weight: bold; outline: none; cursor: pointer; width: 180px; }
-        .table-input { padding: 12px; border-radius: 10px; background: #1e293b; color: #fff; border: 1px solid var(--border); font-size: 1rem; outline: none; font-weight: bold; text-align: center; }
-        .fault-group { display: flex; gap: 8px; align-items: center; justify-content: center; }
-        .fault-input { width: 140px; padding: 12px; border-radius: 10px; background: #1e293b; border: 1px solid var(--border); color: #fff; font-size: 1rem; }
-
-        .action-btn { background: #1e293b; border: 1px solid var(--border); color: #fff; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-        .action-btn:hover { background: var(--primary); border-color: var(--primary); }
-        .btn-green { background: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; border-color: var(--success) !important; }
-        .btn-green:hover { background: var(--success) !important; color: #fff !important; }
-        .btn-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: var(--primary); }
-        .btn-print { background: rgba(245, 158, 11, 0.2); color: var(--warning); border-color: var(--warning); }
-
-        .chat-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--chat-bg); z-index: 99999; display: none; flex-direction: column; }
-        .chat-header { background: var(--card-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index:10;}
-        .chat-header h3 { color: var(--text-main); font-size: 1.2rem; margin: 0; font-weight: 800; }
-        .chat-header p { color: var(--success); font-size: 0.8rem; margin: 0; }
-        .chat-call-btn { background: var(--success); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .chat-close { background: none; border: none; color: var(--danger); font-size: 2rem; cursor: pointer; font-weight: bold; padding-left: 10px;}
+        /* تحكمات الجدول مكبرة */
+        .status-select { padding: 12px; border-radius: 12px; background: var(--card-bg); color: #fff; border: 1px solid var(--border); font-size: 1rem; font-weight: bold; outline: none; width: 170px; }
+        .table-input { padding: 12px; border-radius: 12px; background: var(--card-bg); color: #fff; border: 1px solid var(--border); font-size: 1rem; font-weight: bold; text-align: center; outline: none; }
+        .fault-group { display: flex; gap: 8px; justify-content: center; align-items: center; }
+        .fault-input { width: 140px; padding: 12px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border); color: #fff; font-size: 1rem; font-weight: bold; }
         
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: var(--chat-bg); }
-        .msg { padding: 10px 14px; border-radius: 14px; max-width: 80%; font-size: 1.05rem; line-height: 1.5; font-weight: 600; color: #e9edef;}
+        .action-btn { background: var(--card-bg); border: 1px solid var(--border); color: #fff; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-size: 1rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.3s; }
+        .action-btn:hover { background: var(--primary); border-color: var(--primary); }
+        .btn-green { background: rgba(16, 185, 129, 0.15) !important; color: var(--success) !important; border-color: var(--success) !important; }
+        .btn-green:hover { background: var(--success) !important; color: #fff !important; }
+
+        /* الشات المنبثق ملء الشاشة */
+        .chat-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--bg-dark); z-index: 99999; display: none; flex-direction: column; }
+        .chat-header { background: var(--card-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); box-shadow: 0 2px 15px rgba(0,0,0,0.5); z-index: 10;}
+        .chat-header h3 { color: var(--text-main); font-size: 1.2rem; margin: 0; font-weight: 900; }
+        .chat-call-btn { background: var(--success); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .chat-close { background: none; border: none; color: var(--text-muted); font-size: 2.2rem; cursor: pointer; font-weight: bold; padding-left: 10px;}
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: var(--bg-dark); }
+        .msg { padding: 12px 16px; border-radius: 16px; max-width: 85%; font-size: 1.05rem; line-height: 1.5; font-weight: 600; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
         .msg-tech { background: var(--chat-tech); align-self: flex-start; border-top-right-radius: 0; }
-        .msg-client { background: var(--chat-client); align-self: flex-end; border-top-left-radius: 0; }
-        .msg-time { font-size: 0.75rem; color: rgba(255,255,255,0.6); display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; }
-        .msg-sender { font-size: 0.8rem; color: var(--primary); font-weight: bold; margin-bottom: 4px; }
-        .msg-tech .msg-sender { color: #69f0ae; }
-        .msg img { max-width: 250px; border-radius: 10px; margin-top: 8px; cursor: pointer; border: 1px solid var(--border); }
+        .msg-client { background: var(--chat-client); border: 1px solid var(--border); align-self: flex-end; border-top-left-radius: 0; }
+        .msg-time { font-size: 0.8rem; color: rgba(255,255,255,0.7); display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 6px; }
+        .msg-sender { font-size: 0.85rem; color: var(--primary-glow); font-weight: 900; margin-bottom: 5px; }
+        .msg img { max-width: 260px; border-radius: 12px; margin-top: 8px; cursor: pointer; border: 1px solid var(--border); }
         
         .chat-input-area { background: var(--card-bg); padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--border); align-items: center; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
-        .chat-input-area input { flex: 1; min-width: 0; padding: 16px 20px; border-radius: 25px; border: none; background: #2a3942; color: #fff; outline: none; font-size: 1.05rem; }
-        .chat-icon-btn { background: #2a3942; border: none; color: var(--text-muted); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.4rem; flex-shrink: 0; }
-        .chat-send-btn { background: var(--success); color: #fff; border: none; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.4rem; flex-shrink: 0; }
+        .chat-input-area input { flex: 1; padding: 16px 20px; border-radius: 25px; border: 1px solid var(--border); background: var(--bg-dark); color: #fff; outline: none; font-size: 1.1rem; font-weight: 600; }
+        .chat-icon-btn { background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-muted); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.4rem; flex-shrink: 0; }
+        .chat-send-btn { background: var(--primary); color: #fff; border: none; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.4rem; flex-shrink: 0; }
         .recording { background: var(--danger) !important; color: white !important; animation: pulse 1s infinite; }
 
-        .call-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 17, 32, 0.95); z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .call-avatar { width: 120px; height: 120px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 20px; animation: ring 1.5s infinite; }
-        @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,0.5); } 100% { box-shadow: 0 0 0 30px rgba(14,165,233,0); } }
-        .call-actions { display: flex; gap: 40px; margin-top: 40px; }
-        .call-btn { width: 75px; height: 75px; border-radius: 50%; border: none; font-size: 2rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;}
+        /* شاشة الاتصال */
+        .call-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .call-avatar { width: 130px; height: 130px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; margin-bottom: 25px; animation: ring 1.5s infinite; }
+        @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); } 100% { box-shadow: 0 0 0 35px rgba(59,130,246,0); } }
+        .call-actions { display: flex; gap: 40px; margin-top: 50px; }
+        .call-btn { width: 80px; height: 80px; border-radius: 50%; border: none; font-size: 2.2rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;}
 
-        .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 110000; display: none; align-items: center; justify-content: center; }
-        .lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; border: 2px solid var(--primary); }
-
-        @media print {
-            body { padding: 0; background: #fff; }
-            .top-nav, .search-bar, .action-btn, button, .fault-group { display: none !important; }
-            .card { border: none; box-shadow: none; margin: 0; padding: 0; }
-            table { border: 1px solid #000; }
-            th, td { border: 1px solid #000; color: #000 !important; }
-            * { color: #000 !important; }
-        }
+        .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 110000; display: none; align-items: center; justify-content: center; }
+        .lightbox-overlay img { max-width: 95%; max-height: 90%; border-radius: 16px; }
     </style>
 </head>
 <body>
 
     <div id="toast" class="toast">🔔 رسالة</div>
 
-    <!-- الشريط العلوي الثابت -->
-    <div class="top-nav">
-        <div class="nav-brand">🛠️ <span id="currentShopName" style="color: var(--text-main);">لوحة الفني</span></div>
-        <div class="nav-buttons">
-            <button class="nav-btn active" onclick="switchTab('add')">➕ إضافة</button>
-            <button class="nav-btn" onclick="switchTab('current')">⚙️ الحالية</button>
-            <button class="nav-btn" onclick="switchTab('delivered')">📦 المسلمة</button>
-            <button class="nav-btn" onclick="switchTab('returned')">🔄 المسترجعة</button>
-            <button class="nav-btn" onclick="switchTab('reports')">📊 التقارير</button>
+    <!-- منطقة الطباعة المخفية -->
+    <div id="printAreaWrapper"></div>
+
+    <div id="mainContentWrapper">
+        <!-- الهيدر الأنيق -->
+        <div class="top-header">
+            <div class="brand">🛠️ <span id="currentShopName">لوحة الفني</span></div>
+            <button class="logout-btn" onclick="logout()">خروج 🚪</button>
         </div>
-        <button class="logout-btn" onclick="logout()">خروج</button>
-    </div>
 
-    <!-- شاشة الاتصال -->
-    <div id="callScreen" class="call-screen">
-        <div class="call-avatar">👤</div>
-        <h2 style="color:white; margin:0;" id="callName">العميل</h2>
-        <p style="color:var(--text-muted); margin-top:10px;" id="callStatus">مكالمة واردة...</p>
-        <p id="callTimer" style="color:var(--success); font-size:1.8rem; font-weight:bold; display:none; margin-top:10px;">00:00</p>
-        <div class="call-actions">
-            <button class="call-btn" id="btnAnswer" onclick="answerCall()" style="background:var(--success); display:none;">📞</button>
-            <button class="call-btn" onclick="endCall()" style="background:var(--danger);">❌</button>
+        <!-- شريط التنقل الأفقي المريح للموبايل -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('add')">➕ تسجيل جهاز</button>
+            <button class="tab-btn" onclick="switchTab('current')">⚙️ الأجهزة الحالية</button>
+            <button class="tab-btn" onclick="switchTab('delivered')">📦 المسلمة</button>
+            <button class="tab-btn" onclick="switchTab('returned')">🔄 المسترجعة</button>
+            <button class="tab-btn" onclick="switchTab('reports')">📊 التقارير</button>
         </div>
-        <audio id="remoteAudio" autoplay playsinline></audio>
-    </div>
 
-    <div id="lightbox" class="lightbox-overlay" onclick="this.style.display='none'"><img id="lightboxImg" src=""></div>
-    <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImage(this)">
-
-    <!-- قسم الإضافة -->
-    <div id="tab-add" class="section-content active">
-        <div class="card">
-            <h2>📝 تسجيل جهاز صيانة جديد</h2>
-            <div class="form-grid">
-                <div class="form-group"><label>اسم العميل</label><input type="text" id="clientName"></div>
-                <div class="form-group"><label>رقم الهاتف</label><input type="text" id="clientPhone"></div>
-                <div class="form-group"><label>نوع الجهاز</label><input type="text" id="deviceType"></div>
-                <div class="form-group"><label>العطل الأولي</label><input type="text" id="deviceProblem"></div>
-                <div class="form-group"><label>التكلفة المبدئية</label><input type="number" id="deviceCost"></div>
-                <div class="form-group"><label>وقت الاستلام</label><input type="datetime-local" id="expectedTime"></div>
+        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImage(this)">
+        
+        <!-- شاشة الاتصال والمودال -->
+        <div id="callScreen" class="call-screen">
+            <div class="call-avatar">👤</div>
+            <h2 style="color:white; margin:0; font-size:2rem;" id="callName">العميل</h2>
+            <p style="color:var(--text-muted); margin-top:10px; font-size:1.2rem;" id="callStatus">مكالمة واردة...</p>
+            <p id="callTimer" style="color:var(--success); font-size:2rem; font-weight:bold; display:none; margin-top:15px;">00:00</p>
+            <div class="call-actions">
+                <button class="call-btn" id="btnAnswer" onclick="answerCall()" style="background:var(--success); display:none;">📞</button>
+                <button class="call-btn" onclick="endCall()" style="background:var(--danger);">❌</button>
             </div>
-            <div class="form-group" style="margin-bottom: 25px;"><label>ملاحظات الاستلام</label><textarea id="deviceNotes"></textarea></div>
-            <button class="primary-btn" onclick="addNewDevice()">💾 حفظ وإصدار التتبع</button>
+            <audio id="remoteAudio" autoplay playsinline></audio>
         </div>
-    </div>
 
-    <!-- الأجهزة الحالية -->
-    <div id="tab-current" class="section-content">
-        <div class="card">
-            <h2>⚙️ الأجهزة قيد الفحص والصيانة</h2>
-            <input type="text" id="searchCurrent" class="search-bar" placeholder="🔍 بحث سريع برقم التتبع، العميل، الهاتف..." oninput="renderTables()">
-            <div class="table-responsive">
-                <table id="currentDevicesTable">
-                    <thead>
-                        <tr><th>التتبع</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>الوقت التقريبي</th><th>عطل إضافي</th><th>التكلفة</th><th>الإجراءات</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+        <div id="lightbox" class="lightbox-overlay" onclick="this.style.display='none'"><img id="lightboxImg" src=""></div>
+
+        <!-- قسم الإضافة -->
+        <div id="tab-add" class="section-content active">
+            <div class="card">
+                <h2>📝 بيانات الجهاز الجديد</h2>
+                <div class="form-grid">
+                    <div class="form-group"><label>اسم العميل</label><input type="text" id="clientName"></div>
+                    <div class="form-group"><label>رقم الهاتف</label><input type="text" id="clientPhone"></div>
+                    <div class="form-group"><label>نوع وموديل الجهاز</label><input type="text" id="deviceType"></div>
+                    <div class="form-group"><label>العطل الأولي</label><input type="text" id="deviceProblem"></div>
+                    <div class="form-group"><label>التكلفة المبدئية</label><input type="number" id="deviceCost"></div>
+                    <div class="form-group"><label>وقت الاستلام</label><input type="datetime-local" id="expectedTime"></div>
+                </div>
+                <div class="form-group" style="margin-bottom: 25px;"><label>ملاحظات الاستلام / الرمز</label><textarea id="deviceNotes"></textarea></div>
+                <button class="primary-btn" onclick="addNewDevice()">💾 حفظ وإصدار التتبع</button>
             </div>
         </div>
-    </div>
 
-    <!-- الأجهزة المسلمة -->
-    <div id="tab-delivered" class="section-content">
-        <div class="card">
-            <h2>📦 الأجهزة المسلمة</h2>
-            <input type="text" id="searchDelivered" class="search-bar" placeholder="🔍 بحث..." oninput="renderTables()">
-            <div class="table-responsive">
-                <table id="deliveredDevicesTable">
-                    <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>التكلفة</th><th>الإجراءات</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- الأجهزة المسترجعة -->
-    <div id="tab-returned" class="section-content">
-        <div class="card">
-            <h2>🔄 الأجهزة المسترجعة</h2>
-            <input type="text" id="searchReturned" class="search-bar" placeholder="🔍 بحث..." oninput="renderTables()">
-            <div class="table-responsive">
-                <table id="returnedDevicesTable">
-                    <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- التقارير -->
-    <div id="tab-reports" class="section-content">
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap:wrap; gap:10px;">
-                <h2>📊 التقرير الشامل</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button class="primary-btn" onclick="exportToCSV()" style="background: var(--success); width:auto;">📥 تصدير Excel</button>
-                    <button class="primary-btn" onclick="window.print()" style="background: var(--border); border: 1px solid var(--primary); color: var(--primary); width:auto;">🖨️ طباعة الكل</button>
+        <!-- الأجهزة الحالية -->
+        <div id="tab-current" class="section-content">
+            <div class="card">
+                <h2>⚙️ الأجهزة قيد الفحص والصيانة</h2>
+                <input type="text" id="searchCurrent" class="search-bar" placeholder="🔍 بحث برقم التتبع أو العميل..." oninput="renderTables()">
+                <div class="table-responsive">
+                    <table id="currentDevicesTable">
+                        <thead>
+                            <tr><th>التتبع</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>تحديث الموعد</th><th>عطل إضافي للعميل</th><th>التكلفة</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
-            <input type="text" id="searchReport" class="search-bar" placeholder="🔍 بحث في التقارير..." oninput="renderTables()">
-            <div class="table-responsive">
-                <table id="reportTable">
-                    <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>التكلفة</th><th>الإجراءات</th></tr></thead>
-                    <tbody id="reportTableBody"></tbody>
-                </table>
+        </div>
+
+        <!-- الأجهزة المسلمة -->
+        <div id="tab-delivered" class="section-content">
+            <div class="card">
+                <h2>📦 الأجهزة المسلمة</h2>
+                <input type="text" id="searchDelivered" class="search-bar" placeholder="🔍 بحث..." oninput="renderTables()">
+                <div class="table-responsive">
+                    <table id="deliveredDevicesTable">
+                        <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>التكلفة</th><th>إجراء</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- الشات المنبثق -->
+        <!-- الأجهزة المسترجعة -->
+        <div id="tab-returned" class="section-content">
+            <div class="card">
+                <h2>🔄 الأجهزة المسترجعة</h2>
+                <input type="text" id="searchReturned" class="search-bar" placeholder="🔍 بحث..." oninput="renderTables()">
+                <div class="table-responsive">
+                    <table id="returnedDevicesTable">
+                        <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- التقارير -->
+        <div id="tab-reports" class="section-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
+                    <h2>📊 التقرير الشامل</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn btn-green" onclick="exportToCSV()">📥 تصدير Excel</button>
+                        <button class="action-btn" onclick="printFullReport()" style="background: var(--primary); border:none;">🖨️ طباعة الجدول</button>
+                    </div>
+                </div>
+                <input type="text" id="searchReport" class="search-bar" placeholder="🔍 فلترة التقارير..." oninput="renderTables()">
+                <div class="table-responsive">
+                    <table id="reportTable">
+                        <thead><tr><th>التتبع</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>الجهاز</th><th>الحالة</th><th>التكلفة</th></tr></thead>
+                        <tbody id="reportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> <!-- نهاية mainContentWrapper -->
+
+    <!-- الشات المنبثق للفني -->
     <div id="chatModal" class="chat-modal">
         <div class="chat-header">
             <div>
-                <h3 id="activeChatTitle">💬 محادثة العميل</h3>
-                <p>● متصل</p>
+                <h3 id="activeChatTitle">💬 المحادثة</h3>
+                <p style="color:var(--success); font-size:0.85rem; margin-top:2px;">● متصل</p>
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <button class="chat-call-btn" onclick="startCall()" title="اتصال">📞</button>
@@ -234,7 +255,7 @@
         <div class="chat-messages" id="activeChatMsgsContainer"></div>
         <div class="chat-input-area">
             <button class="chat-icon-btn" onclick="document.getElementById('imageInput').click()">🖼️</button>
-            <input type="text" id="activeChatInput" placeholder="رسالة..." onkeydown="if(event.key==='Enter') sendTechMsgActive()">
+            <input type="text" id="activeChatInput" placeholder="اكتب ردك للعميل..." onkeydown="if(event.key==='Enter') sendTechMsgActive()">
             <button class="chat-icon-btn" id="voiceBtn" onclick="toggleVoice()">🎙️</button>
             <button class="chat-send-btn" onclick="sendTechMsgActive()">➤</button>
         </div>
@@ -353,7 +374,7 @@
 
         function switchTab(tabId) {
             document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
@@ -368,9 +389,9 @@
             let { error } = await _supabase.from('devices').insert([{ tracking_number: trackCode, customer_name: name, phone: phone, device_name: device, problem: problem, new_fault: '', cost: cost || '0', expected_time: expectedTime || null, device_password: password, details: notes, status: 'جاري الفحص الفني', chat: [], technician: currentTechUsername }]);
 
             if (error) { alert('خطأ في الحفظ'); return; }
-            showToast('تم التسجيل: ' + trackCode);
+            showToast('تم التسجيل بنجاح: ' + trackCode);
             document.querySelectorAll('#tab-add input, #tab-add textarea').forEach(i => i.value='');
-            await loadData(true); switchTab('current');
+            await loadData(true); switchTab('current'); document.querySelectorAll('.tab-btn')[1].classList.add('active'); document.querySelectorAll('.tab-btn')[0].classList.remove('active');
         }
 
         async function loadData(isInit = false) {
@@ -395,22 +416,19 @@
                 let devDate = formatDate(d.created_at);
                 let text = `${d.tracking_number} ${d.customer_name} ${d.phone} ${d.device_name}`.toLowerCase();
 
-                let printBtn = `<button class="action-btn btn-print" onclick="printReceipt(${index})" title="طباعة الإيصال">🖨️</button>`;
-                let chatBtn = isClosed ? `<button class="action-btn" style="opacity:0.5; cursor:not-allowed;" onclick="alert('الشات مغلق، الطلب منتهي')">🔒 مغلق</button>` : `<button class="action-btn ${unread?'btn-green':'btn-blue'}" onclick="openChatBox(${index})">💬 ${unread?'جديد':'شات'}</button>`;
-                let whatsBtn = `<a class="action-btn" style="background:rgba(34, 197, 94, 0.15); color:#4ade80; border-color:var(--success);" href="https://api.whatsapp.com/send?phone=${d.phone.replace(/^0/,'20')}" target="_blank" title="مراسلة واتساب">📱</a>`;
-
-                let commonBtns = `<div style="display:flex; gap:6px; justify-content:center;">${printBtn}</div>`;
-                let currentBtns = `<div style="display:flex; gap:6px; justify-content:center;">${chatBtn}${whatsBtn}${printBtn}<button class="action-btn" onclick="editDetails(${index})" title="تعديل الملاحظات">📝</button></div>`;
+                let printBtn = `<button class="action-btn" style="background:transparent; border-color:var(--text-muted); color:var(--text-muted);" onclick="printReceipt(${index})" title="طباعة">🖨️</button>`;
+                let chatBtn = isClosed ? `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="alert('الشات مغلق لانتهاء الطلب')">🔒 مغلق</button>` : `<button class="action-btn ${unread?'btn-green':''}" onclick="openChatBox(${index})">💬 ${unread?'رسالة!':'شات'}</button>`;
+                let whatsBtn = `<a class="action-btn" style="color:#4ade80; border-color:#4ade80;" href="https://api.whatsapp.com/send?phone=${d.phone.replace(/^0/,'20')}" target="_blank">📱 واتساب</a>`;
 
                 if(statusVal.includes('مسترجع')) {
-                    if(!sRet || text.includes(sRet)) retTb.innerHTML += `<tr><td><b style="color:var(--primary);">${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td>${commonBtns}</td></tr>`;
+                    if(!sRet || text.includes(sRet)) retTb.innerHTML += `<tr><td><b style="color:var(--danger);">${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td>${printBtn}</td></tr>`;
                 } else if(statusVal.includes('تم تسليم')) {
-                    if(!sDel || text.includes(sDel)) delTb.innerHTML += `<tr><td><b style="color:var(--primary);">${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td style="color:var(--warning);font-weight:bold;">${d.cost} ج.م</td><td>${commonBtns}</td></tr>`;
+                    if(!sDel || text.includes(sDel)) delTb.innerHTML += `<tr><td><b style="color:var(--success);">${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td style="color:var(--warning);font-weight:900;">${d.cost} ج.م</td><td>${printBtn}</td></tr>`;
                 } else {
                     if (!sCur || text.includes(sCur)) {
                         curTb.innerHTML += `
                             <tr>
-                                <td><b style="color:var(--primary);">${d.tracking_number}</b></td>
+                                <td><b style="color:var(--primary); font-size:1.1rem;">${d.tracking_number}</b></td>
                                 <td>${d.customer_name}</td>
                                 <td style="direction:ltr;">${d.phone}</td>
                                 <td>${d.device_name}</td>
@@ -418,34 +436,39 @@
                                     <select class="status-select" onchange="updateDeviceStatus(${index}, this.value)">
                                         <option value="جاري الفحص الفني" ${statusVal==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
                                         <option value="جاري الإصلاح" ${statusVal==='جاري الإصلاح'?'selected':''}>⚙️ إصلاح</option>
-                                        <option value="بانتظار موافقة العميل على التكلفة" ${statusVal.includes('بانتظار')?'selected':''}>⏳ انتظار</option>
+                                        <option value="بانتظار موافقة العميل على التكلفة" ${statusVal.includes('بانتظار')?'selected':''}>⏳ انتظار موافقة</option>
                                         <option value="تم رفض التكلفة من العميل" ${statusVal.includes('رفض')?'selected':''}>❌ تم الرفض</option>
                                         <option value="جاهز للاستلام" ${statusVal==='جاهز للاستلام'?'selected':''}>✅ جاهز</option>
                                         <option value="تم تسليم الجهاز للعميل" ${statusVal.includes('تم تسليم')?'selected':''}>📦 تسليم</option>
                                         <option value="مسترجع" ${statusVal==='مسترجع'?'selected':''}>🔄 مسترجع</option>
                                     </select>
                                 </td>
-                                <td><input type="datetime-local" class="table-input" style="width:160px;" value="${d.expected_time || ''}" onchange="updateExpectedTime(${index}, this.value)"></td>
+                                <td><input type="datetime-local" class="table-input" value="${d.expected_time || ''}" onchange="updateExpectedTime(${index}, this.value)"></td>
                                 <td>
                                     <div class="fault-group">
-                                        <input type="text" class="fault-input" id="faultInput-${index}" value="${d.new_fault || ''}" placeholder="أضف عطل...">
+                                        <input type="text" class="fault-input" id="faultInput-${index}" value="${d.new_fault || ''}" placeholder="عطل جديد...">
                                         <button class="action-btn btn-green" onclick="sendFault(${index})">إرسال</button>
                                     </div>
                                 </td>
-                                <td><input type="text" class="table-input" style="width:70px; color:var(--warning);" value="${d.cost}" onchange="updateCost(${index}, this.value)"></td>
-                                <td>${currentBtns}</td>
+                                <td><input type="text" class="table-input" style="width:90px; color:var(--warning);" value="${d.cost}" onchange="updateCost(${index}, this.value)"></td>
+                                <td>
+                                    <div style="display:flex; gap:8px; justify-content:center;">
+                                        ${chatBtn}
+                                        ${whatsBtn}
+                                        ${printBtn}
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     }
                 }
-                if (!sRep || text.includes(sRep)) repTb.innerHTML += `<tr><td><b>${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td>${d.cost}</td><td>${printBtn}</td></tr>`;
+                if (!sRep || text.includes(sRep)) repTb.innerHTML += `<tr><td><b>${d.tracking_number}</b></td><td>${devDate}</td><td>${d.customer_name}</td><td style="direction:ltr;">${d.phone}</td><td>${d.device_name}</td><td>${statusVal}</td><td style="font-weight:bold;">${d.cost} ج.م</td></tr>`;
             });
         }
 
-        async function updateDeviceStatus(idx, val) { devicesList[idx].status = val; renderTables(); await _supabase.from('devices').update({ status: val }).eq('id', devicesList[idx].id); showToast('تم التحديث'); }
-        async function updateCost(idx, val) { await _supabase.from('devices').update({ cost: val }).eq('id', devicesList[idx].id); showToast('تم تعديل السعر'); }
+        async function updateDeviceStatus(idx, val) { devicesList[idx].status = val; renderTables(); await _supabase.from('devices').update({ status: val }).eq('id', devicesList[idx].id); showToast('تم تحديث الحالة'); }
+        async function updateCost(idx, val) { await _supabase.from('devices').update({ cost: val }).eq('id', devicesList[idx].id); showToast('تم تحديث التكلفة'); }
         async function updateExpectedTime(idx, val) { await _supabase.from('devices').update({ expected_time: val }).eq('id', devicesList[idx].id); showToast('تم تحديد الموعد'); }
-        async function editDetails(idx) { let dev = devicesList[idx]; let n = prompt('تعديل الملاحظات (تظهر للعميل):', dev.details || ''); if(n !== null) { await _supabase.from('devices').update({ details: n }).eq('id', dev.id); loadData(true); } }
 
         async function sendFault(idx) { 
             let dev = devicesList[idx]; let val = document.getElementById('faultInput-'+idx).value.trim(); 
@@ -455,39 +478,70 @@
             showToast('تم إرسال العطل للعميل'); 
         }
 
+        // ==========================================
+        // وظائف الطباعة المحدثة والمثالية
+        // ==========================================
         function printReceipt(idx) {
             let d = devicesList[idx];
             let html = `
-                <div style="font-family: sans-serif; max-width: 80mm; margin: 0 auto; direction: rtl; border: 1px solid #000; padding:15px; border-radius:10px;">
-                    <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h2 style="font-size: 20px; font-weight:900; margin:0;">إيصال استلام صيانة</h2>
-                        <p style="font-size: 12px; margin: 5px 0;">${new Date().toLocaleString('ar-EG')}</p>
+                <div style="font-family: 'Cairo', sans-serif; max-width: 100mm; margin: 0 auto; direction: rtl; border: 2px solid #000; padding:20px; border-radius:15px; background:#fff; color:#000;">
+                    <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                        <h2 style="font-size: 24px; font-weight:900; margin:0;">إيصال استلام صيانة</h2>
+                        <p style="font-size: 14px; margin: 8px 0; font-weight:bold;">${new Date().toLocaleString('ar-EG')}</p>
                     </div>
-                    <div style="font-size: 15px; line-height: 2.2;">
-                        <p><b>رقم التتبع:</b> <span style="font-family:monospace; font-weight:bold; font-size:16px;">${d.tracking_number}</span></p>
-                        <p><b>العميل:</b> ${d.customer_name}</p>
-                        <p><b>الهاتف:</b> <span style="direction:ltr; display:inline-block;">${d.phone}</span></p>
-                        <p><b>الجهاز:</b> ${d.device_name}</p>
-                        <p><b>العطل:</b> ${d.problem}</p>
-                        <p><b>التكلفة:</b> <span style="font-weight:900;">${d.cost || 0} ج.م</span></p>
+                    <div style="font-size: 18px; line-height: 2.5;">
+                        <p style="margin: 5px 0;"><b>رقم التتبع:</b> <span style="font-family:monospace; font-weight:900; font-size:22px;">${d.tracking_number}</span></p>
+                        <p style="margin: 5px 0;"><b>العميل:</b> ${d.customer_name}</p>
+                        <p style="margin: 5px 0;"><b>الهاتف:</b> <span style="direction:ltr; display:inline-block; font-weight:bold;">${d.phone}</span></p>
+                        <p style="margin: 5px 0;"><b>الجهاز:</b> ${d.device_name}</p>
+                        <p style="margin: 5px 0;"><b>العطل:</b> ${d.problem}</p>
+                        <p style="margin: 5px 0; border-top: 2px dashed #ccc; padding-top: 10px;"><b>التكلفة المبدئية:</b> <span style="font-weight:900; font-size:20px;">${d.cost || 0} ج.م</span></p>
+                    </div>
+                    <div style="text-align:center; margin-top:20px; font-size:12px; border-top:1px solid #000; padding-top:10px;">
+                        احتفظ بهذا الإيصال لاستلام جهازك
                     </div>
                 </div>
             `;
-            let newWin = window.open('', '', 'width=600,height=600');
-            newWin.document.write('<html><body onload="window.print(); window.close()">' + html + '</body></html>');
-            newWin.document.close();
+            let printArea = document.getElementById('printAreaWrapper');
+            printArea.innerHTML = html;
+            printArea.style.display = 'block';
+            document.getElementById('mainContentWrapper').style.display = 'none';
+            window.print();
+            setTimeout(() => { printArea.style.display = 'none'; document.getElementById('mainContentWrapper').style.display = 'block'; }, 500);
+        }
+
+        function printFullReport() {
+            let html = `
+                <div style="direction:rtl; font-family:'Cairo', sans-serif; background:#fff; color:#000; padding:20px;">
+                    <h2 style="text-align:center; margin-bottom:20px; font-size:24px; border-bottom:2px solid #000; padding-bottom:10px;">تقرير الأجهزة الشامل - ${currentTechUsername}</h2>
+                    <table style="width:100%; border-collapse:collapse; text-align:center;" border="1">
+                        <thead>
+                            <tr style="background:#f1f5f9;">
+                                <th style="padding:10px;">التتبع</th><th style="padding:10px;">التاريخ</th><th style="padding:10px;">العميل</th><th style="padding:10px;">الهاتف</th><th style="padding:10px;">الجهاز</th><th style="padding:10px;">الحالة</th><th style="padding:10px;">التكلفة</th>
+                            </tr>
+                        </thead>
+                        <tbody>${document.getElementById('reportTableBody').innerHTML}</tbody>
+                    </table>
+                </div>
+            `;
+            let printArea = document.getElementById('printAreaWrapper');
+            printArea.innerHTML = html;
+            printArea.style.display = 'block';
+            document.getElementById('mainContentWrapper').style.display = 'none';
+            window.print();
+            setTimeout(() => { printArea.style.display = 'none'; document.getElementById('mainContentWrapper').style.display = 'block'; }, 500);
         }
 
         function exportToCSV() {
             let csv = "\uFEFFرقم التتبع,التاريخ,العميل,الهاتف,الجهاز,الحالة,التكلفة\n";
             devicesList.forEach(d => { csv += `"${d.tracking_number}","${formatDate(d.created_at)}","${d.customer_name}","${d.phone}","${d.device_name}","${d.status}","${d.cost}"\n`; });
-            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `تقرير.csv`; link.click();
+            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `تقرير_${currentTechUsername}.csv`; link.click();
         }
 
         function openChatBox(index) {
             activeChatDeviceIndex = index;
             let dev = devicesList[index];
-            document.getElementById('activeChatTitle').innerText = `💬 عميل: ${dev.customer_name} (${dev.tracking_number})`;
+            document.getElementById('activeChatTitle').innerText = `💬 ${dev.customer_name}`;
             document.getElementById('chatModal').style.display = 'flex';
             renderActiveChatMessages();
         }
@@ -507,9 +561,9 @@
                 let isMe = m.sender === 'tech';
                 if (!isMe && !m.isRead) hasUnread = true; 
 
-                let ticks = isMe ? (m.isRead ? `<span style="color:#38bdf8;">✓✓</span>` : `<span style="color:var(--text-muted);">✓</span>`) : '';
+                let ticks = isMe ? (m.isRead ? `<span style="color:#34d399;">✓✓</span>` : `<span style="color:var(--text-muted);">✓</span>`) : '';
                 let content = m.isImage ? `<img src="${m.text}" onclick="document.getElementById('lightboxImg').src=this.src; document.getElementById('lightbox').style.display='flex';">` : 
-                              (m.isVoice ? `<audio controls src="${m.text}" style="height:35px; width:200px; outline:none;"></audio>` : `<div>${m.text}</div>`);
+                              (m.isVoice ? `<audio controls src="${m.text}" style="height:40px; width:220px; outline:none;"></audio>` : `<div>${m.text}</div>`);
                 
                 container.innerHTML += `
                     <div class="msg ${isMe ? 'msg-tech' : 'msg-client'}">
@@ -534,9 +588,6 @@
             if(changed) { dev.chat = newChat; await _supabase.from('devices').update({chat: newChat}).eq('id', dev.id); }
         }
 
-        // ==========================================
-        // الإرسال مع التأكد المطلق من الحفظ للفني
-        // ==========================================
         async function sendTechMsgActive(text = null, isVoice = false, isImage = false) {
             if (activeChatDeviceIndex === null) return;
             let input = document.getElementById('activeChatInput');
@@ -544,40 +595,32 @@
             if(!val) return;
             if(!text) { input.value = ''; }
 
-            isSending = true; // إيقاف الرادار مؤقتاً لتجنب المسح
+            isSending = true; 
 
             let dev = devicesList[activeChatDeviceIndex];
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let msg = { 
-                id: msgId, 
-                sender: 'tech', 
-                text: val, 
-                isVoice: isVoice, 
-                isImage: isImage, 
-                time: new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}), 
-                isRead: false 
+                id: msgId, sender: 'tech', text: val, isVoice: isVoice, isImage: isImage, 
+                time: new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}), isRead: false 
             };
+            
+            dev.chat = dev.chat || [];
+            dev.chat.push(msg);
+            renderActiveChatMessages();
+            setTimeout(() => document.getElementById('activeChatMsgsContainer').scrollTop = document.getElementById('activeChatMsgsContainer').scrollHeight, 50);
 
             try {
-                // سحب المحادثة المحدثة مباشرة من السيرفر
                 let { data: curData, error: fetchErr } = await _supabase.from('devices').select('chat').eq('id', dev.id).single();
                 if(fetchErr) throw fetchErr;
 
                 let dbChat = curData.chat || [];
                 dbChat.push(msg);
 
-                // حفظها في السيرفر
                 let { error: updateErr } = await _supabase.from('devices').update({ chat: dbChat }).eq('id', dev.id);
                 if(updateErr) throw updateErr;
 
-                // تحديث الشاشة
-                dev.chat = dbChat;
-                renderActiveChatMessages();
-                setTimeout(() => document.getElementById('activeChatMsgsContainer').scrollTop = document.getElementById('activeChatMsgsContainer').scrollHeight, 50);
-
             } catch(e) {
-                console.error("Save error:", e);
-                showToast('فشل إرسال الرسالة، تأكد من الإنترنت!', 'error');
+                showToast('فشل الإرسال، تأكد من الإنترنت', 'error');
             } finally {
                 isSending = false;
             }
@@ -607,8 +650,7 @@
                     mediaRec.onstop = () => {
                         let b = new Blob(audioChunks, {type:'audio/webm'}); let r = new FileReader(); r.readAsDataURL(b);
                         r.onloadend = () => { sendTechMsgActive(r.result, true, false); }; s.getTracks().forEach(t=>t.stop());
-                    };
-                    mediaRec.start(); isRec=true; btn.classList.add('recording');
+                    }; mediaRec.start(); isRec=true; btn.classList.add('recording');
                 } catch(e) { alert('يجب السماح بالمايكروفون'); }
             } else { mediaRec.stop(); isRec=false; btn.classList.remove('recording'); }
         }
@@ -643,7 +685,7 @@
             } catch(e) { endCall(); }
         }
         function startTimer() { callSec = 0; let el = document.getElementById('callTimer'); el.style.display = 'block'; callTimer = setInterval(() => { callSec++; let m = String(Math.floor(callSec/60)).padStart(2,'0'), s = String(callSec%60).padStart(2,'0'); el.innerText = `${m}:${s}`; }, 1000); }
-        function endCall() { stopRinging(); if(callTimer) { clearInterval(callTimer); callTimer=null; document.getElementById('callTimer').style.display = 'none'; } if(currentCall) { currentCall.close(); currentCall=null; } if(localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream=null; } document.getElementById('callScreen').style.display = 'none'; document.getElementById('remoteAudio').srcObject = null; }
+        function endCall() { stopRinging(); if(callTimer) { clearInterval(callTimer); callTimer=null; document.getElementById('callTimer').style.display = 'none'; } if(currentCall) { currentCall.close(); currentCall=null; } if(localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream=null; } document.getElementById('callScreen').style.display = 'none'; document.getElementById('remoteAudio').srcObject = null; document.getElementById('callName').innerText = 'العميل'; }
     </script>
 </body>
 </html>

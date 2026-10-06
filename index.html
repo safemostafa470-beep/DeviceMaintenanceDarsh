@@ -15,14 +15,17 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
+        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 55px; }
 
         .toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; font-size: 1rem; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 999999; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .toast.show { top: 20px; }
+        .toast.show { top: 60px; }
         .toast.error { background: var(--danger); }
 
-        .announcement-bar { width: 100%; background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6); color: #ffffff; padding: 12px 0; font-size: 1.1rem; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; position: fixed; top:0; z-index: 1000;}
-        .container { width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; gap: 20px; margin-top: 10px; }
+        /* شريط الإعلانات الثابت بالأعلى */
+        .announcement-bar { width: 100%; background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6); color: #ffffff; padding: 12px 0; font-size: 1.1rem; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; position: fixed; top: 0; left: 0; z-index: 1000; }
+        .announcement-bar marquee { width: 100%; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        .container { width: 100%; max-width: 600px; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
         .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); width: 100%; }
         h2 { color: var(--primary); font-size: 1.4rem; text-align: center; margin-bottom: 25px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
@@ -89,14 +92,15 @@
 
     <div id="toast" class="toast">🔔 رسالة</div>
 
+    <!-- شريط الإعلانات يقرأ من عمود ads -->
     <div class="announcement-bar" id="adBar">
-        <marquee scrollamount="5" id="adText">جاري التحميل...</marquee>
+        <marquee scrollamount="5" id="adText">جاري تحميل العروض...</marquee>
     </div>
 
     <!-- شاشة الاتصال -->
     <div id="callScreen" class="call-screen">
         <div class="call-avatar">👨‍🔧</div>
-        <h2 style="color:white; margin:0;" id="callName">المهندس المسؤول</h2>
+        <h2 style="color:white; margin:0;" id="callName">المهندس</h2>
         <p style="color:var(--text-muted); margin-top:10px;" id="callStatus">جاري الاتصال...</p>
         <p id="callTimer" style="color:var(--success); font-size:1.5rem; font-weight:bold; display:none; margin-top:10px;">00:00</p>
         <div class="call-actions">
@@ -117,7 +121,7 @@
                 <button onclick="searchDevice()">بحث</button>
             </div>
 
-            <!-- كارت التسليم/الاسترجاع -->
+            <!-- كارت التسليم/الاسترجاع (يخفي الشات) -->
             <div id="deliveredCard" class="status-special-card">
                 <div style="font-size: 3.5rem; margin-bottom: 10px;" id="delivIcon">🎉</div>
                 <h3 id="delivTitle" style="margin-bottom: 10px;">تم التسليم بنجاح!</h3>
@@ -137,7 +141,7 @@
                 <div class="info-row"><span>الجهاز</span> <span id="resDevice"></span></div>
                 <div class="info-row"><span>العطل المسجل</span> <span id="resProblem"></span></div>
                 <div class="info-row"><span>الموعد المقدر</span> <span id="resExpected" style="direction:ltr;"></span></div>
-                <div class="info-row"><span>التكلفة</span> <span id="resCost" style="color:var(--warning);"></span></div>
+                <div class="info-row"><span>التكلفة المبدئية</span> <span id="resCost" style="color:var(--warning);"></span></div>
                 <div class="info-row"><span>الحالة الحالية</span> <span id="resStatus" style="color:var(--success);"></span></div>
 
                 <div id="extraNoticeBox" class="extra-box">
@@ -152,10 +156,10 @@
             <div id="noResult" style="color: var(--danger); text-align: center; margin-top: 15px; font-weight: bold; display: none;">لا توجد بيانات! تأكد من الرقم.</div>
         </div>
         
-        <div class="footer-link"><a href="login.html">🔒 بوابة دخول الفنيين</a></div>
+        <div class="footer-link"><a href="login.html" style="color:var(--text-muted); text-decoration:none;">🔒 دخول الفنيين</a></div>
     </div>
 
-    <!-- نافذة الشات المستقلة -->
+    <!-- نافذة الشات المستقلة والكاملة (WhatsApp Style) -->
     <div id="chatModal" class="chat-modal">
         <div class="chat-header">
             <div class="chat-header-info">
@@ -183,7 +187,7 @@
 
         let activeDevice = null;
         let syncInterval = null;
-        let isSending = false; // يمنع تضارب الرادار أثناء الإرسال
+        let isSending = false;
         
         let myPeer = null; let currentCall = null; let localStream = null;
         let callTimer = null; let callSec = 0;
@@ -220,12 +224,24 @@
         }
         function stopRinging() { if(ringtoneInterval) { clearInterval(ringtoneInterval); ringtoneInterval = null; } }
 
+        // تحميل الإعلانات من عمود ads
         async function loadAds() {
             try {
+                // نبحث في جدول ads
                 let { data } = await _supabase.from('ads').select('*').limit(1);
-                if (data && data.length > 0 && data[0].text) {
+                let adText = '';
+                if (data && data.length > 0) {
+                    adText = data[0].ads || data[0].text; // يقرأ من عمود ads
+                }
+                if(!adText) {
+                    // في حال كان الإعلان موجود في جدول الفنيين كبديل
+                    let { data: tData } = await _supabase.from('technicians').select('*').limit(1);
+                    if(tData && tData.length > 0) adText = tData[0].ads || tData[0].announcement;
+                }
+
+                if (adText) {
                     document.getElementById('adBar').style.display = 'block';
-                    document.getElementById('adText').innerText = `✨ ${data[0].text} ✨`;
+                    document.getElementById('adText').innerText = `✨ ${adText} ✨`;
                 }
             } catch(e) {}
         }
@@ -259,6 +275,7 @@
             activeDevice = data[0];
             let status = activeDevice.status || '';
 
+            // لو مسلّم نخفي الشات
             if (status.includes('تم تسليم') || status.includes('مسترجع')) {
                 document.getElementById('deliveredCard').style.display = 'block';
                 document.getElementById('dtTrack').innerText = activeDevice.tracking_number;
@@ -291,7 +308,6 @@
             syncInterval = setInterval(liveSync, 1500); 
         }
 
-        // الرادار المباشر
         let isSyncing = false;
         async function liveSync() {
             if(!activeDevice || isSyncing || isSending) return;
@@ -398,50 +414,44 @@
             }
         }
 
-        // ==========================================
-        // الإرسال مع التأكد المطلق من الحفظ في الداتابيز
-        // ==========================================
+        // إرسال الرسالة فوري بدون انتظار (صفر ثانية تأخير)
         async function sendMsg(text = null, isVoice = false, isImage = false) {
             let input = document.getElementById('chatInput');
             let val = text || input.value.trim();
             if(!val || !activeDevice) return;
-            if(!text) { input.value = ''; }
+            
+            if(!text) { input.value = ''; } // تفريغ فوراً
 
-            isSending = true; // إيقاف الرادار مؤقتاً لتفادي التعارض
+            isSending = true; // نمنع الرادار من مسح رسالتك قبل وصولها
 
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let msg = { 
-                id: msgId, 
-                sender: 'client', 
-                text: val, 
-                isVoice: isVoice, 
-                isImage: isImage, 
-                time: new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}), 
-                isRead: false 
+                id: msgId, sender: 'client', text: val, isVoice: isVoice, isImage: isImage, 
+                time: new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}), isRead: false 
             };
 
+            // نظهر الرسالة محلياً فوراً كأنها وصلت (Optimistic Update)
+            activeDevice.chat = activeDevice.chat || [];
+            activeDevice.chat.push(msg);
+            renderChat(activeDevice.chat);
+            setTimeout(() => document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight, 50);
+
+            // ثم نرفع للسيرفر
             try {
-                // سحب المحادثة المحدثة مباشرة من السيرفر قبل الإضافة
                 let { data: curData, error: fetchErr } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
                 if(fetchErr) throw fetchErr;
 
                 let dbChat = curData.chat || [];
                 dbChat.push(msg);
 
-                // حفظها في السيرفر
                 let { error: updateErr } = await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
                 if(updateErr) throw updateErr;
 
-                // تم الحفظ بنجاح 100% -> الآن نعرضها
-                activeDevice.chat = dbChat;
-                renderChat(activeDevice.chat);
-                setTimeout(() => document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight, 50);
-
             } catch(e) {
                 console.error("Save error:", e);
-                showToast('فشل إرسال الرسالة، تأكد من الإنترنت!', 'error');
+                showToast('تأكد من اتصال الإنترنت، قد لا تصل رسالتك!', 'error');
             } finally {
-                isSending = false; // إعادة تشغيل الرادار
+                isSending = false; // نفتح الرادار تاني
             }
         }
 
@@ -469,8 +479,7 @@
                     mediaRec.onstop = () => {
                         let b = new Blob(audioChunks, {type:'audio/webm'}); let r = new FileReader(); r.readAsDataURL(b);
                         r.onloadend = () => { sendMsg(r.result, true, false); }; s.getTracks().forEach(t=>t.stop());
-                    };
-                    mediaRec.start(); isRec=true; btn.classList.add('recording');
+                    }; mediaRec.start(); isRec=true; btn.classList.add('recording');
                 } catch(e) { alert('يجب السماح بالمايكروفون'); }
             } else { mediaRec.stop(); isRec=false; btn.classList.remove('recording'); }
         }
