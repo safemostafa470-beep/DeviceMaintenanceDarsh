@@ -405,7 +405,7 @@
             
             await fetchDevicesInitial();
 
-            // 🌟 الرادار السريع الآمن للفني كل ثانية 🌟
+            // 🌟 الرادار الآمن جداً (بدون أخطاء مسح) 🌟
             if(syncInterval) clearInterval(syncInterval);
             syncInterval = setInterval(smartSyncTech, 1000);
 
@@ -422,7 +422,7 @@
         }
 
         // ==============================================
-        // رادار المزامنة الذكية (الآمن) للفني
+        // نظام المزامنة الذكية (الآمن 100%) للفني
         // ==============================================
         let isSyncing = false;
         async function smartSyncTech() {
@@ -441,14 +441,13 @@
                             devices.unshift(dbDev); 
                             needsTableRender = true; 
                         } else {
-                            // 1. تحديث الحالات فوراً بناءً على قرار العميل
-                            let stateChanged = locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time;
-                            if(stateChanged) {
+                            // 1. تحديث الحالات 
+                            if(locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time) {
                                 locDev.status = dbDev.status; locDev.cost = dbDev.cost; locDev.new_fault = dbDev.new_fault; locDev.expected_time = dbDev.expected_time;
                                 needsTableRender = true;
                             }
 
-                            // 2. الدمج الذكي للشات (مستحيل يمسح رسالتك)
+                            // 2. الدمج الذكي جداً للشات (لا للـ Sort المدمر!)
                             let dbChat = dbDev.chat || [];
                             let locChat = locDev.chat || [];
                             let chatChanged = false;
@@ -456,7 +455,7 @@
                             dbChat.forEach(dbMsg => {
                                 let existingMsg = locChat.find(m => m.id === dbMsg.id);
                                 if (!existingMsg) {
-                                    locChat.push(dbMsg);
+                                    locChat.push(dbMsg); // إضافة الرسالة الجديدة فقط
                                     chatChanged = true;
                                     if(dbMsg.sender === 'client') {
                                         playMessagePing();
@@ -485,7 +484,7 @@
                 }
             } catch(e) {}
             
-            isSyncing = false; // فتح القفل للرادار
+            isSyncing = false; // فتح القفل للرادار التالي
         }
 
         function refreshActiveView() {
@@ -550,7 +549,6 @@
                     costCell = `<b style="color:#34d399; font-size:1rem;">${d.cost || 0} ${curConf.currency}</b>`;
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز منتهي.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
-                    // القائمة المنسدلة تتغير تلقائياً حسب الحالة
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#0f172a; color:#fff; border:2px solid var(--glass-border); padding:8px 10px; border-radius:12px; font-size:0.85rem; cursor:pointer; font-weight:800;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
@@ -829,19 +827,20 @@
                 if(!data || !data.chat) return;
                 
                 let changed = false; let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-                let newChat = data.chat.map((m, index) => {
-                    if(m.sender === 'client' && !m.isRead) { 
-                        m.isRead = true; m.readTime = currentTime; changed = true; 
-                        if(d.chat[index]) { d.chat[index].isRead = true; d.chat[index].readTime = currentTime; }
-                    }
+                let newChat = data.chat.map(m => {
+                    if(m.sender === 'client' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; }
                     return m;
                 });
                 if(changed) {
                     await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
+                    d.chat = newChat;
                 }
             } catch(e) {}
         }
 
+        // ==============================================
+        // الإرسال المنيع للفني بدون أخطاء ترتيب
+        // ==============================================
         async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
@@ -860,16 +859,22 @@
             renderChatMsgs(d.chat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // الرفع الآمن
+            // الرفع المباشر الصافي للسيرفر
             try {
-                let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+                let { data, error } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+                if (error) throw error;
+
                 let dbChat = data.chat || [];
                 if(!dbChat.find(x => x.id === msgId)) {
                     dbChat.push(newMsg);
-                    dbChat.sort((a, b) => parseInt(a.id.split('_')[0]) - parseInt(b.id.split('_')[0]));
-                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    // بدون كود الترتيب (Sort) لضمان عدم حدوث Error بسبب الرسائل القديمة
+                    let { error: updateErr } = await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    if (updateErr) throw updateErr;
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Save Error", e);
+                alert("حدث خطأ أثناء إرسال الرسالة.");
+            }
         }
 
         async function toggleVoiceRecording() {

@@ -71,7 +71,7 @@
         @keyframes pulse-record { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
         .call-screen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.98); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(14px); }
         .call-screen-overlay.active { opacity: 1; visibility: visible; }
-        .call-avatar { width: 120px; height: 120px; background: var(--accent-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 24px; animation: pulse-avatar 1.5s infinite; }
+        .call-avatar { width: 120px; height: 120px; background: var(--accent-gradient); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: font-size: 4rem; margin-bottom: 24px; animation: pulse-avatar 1.5s infinite; }
         @keyframes pulse-avatar { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,0.7); } 70% { box-shadow: 0 0 0 30px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
         .call-name { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
         .call-status { font-size: 1.1rem; color: #94a3b8; margin-bottom: 35px; }
@@ -421,7 +421,7 @@
         }
 
         // ==============================================
-        // نظام المزامنة الذكية (الرادار الآمن) للعميل
+        // نظام المزامنة الذكية للعميل (بدون ترتيب وبدون أخطاء)
         // ==============================================
         let isSyncing = false;
         async function smartSyncClient() {
@@ -444,20 +444,18 @@
                         }
                     }
 
-                    // 2. الدمج الذكي للشات (مستحيل يمسح رسالتك)
+                    // 2. الدمج الذكي للشات (إضافة وحماية للرسائل)
                     let dbChat = data.chat || [];
                     let localChat = activeDevice.chat || [];
                     let chatChanged = false;
 
-                    // إذا السيرفر فيه رسائل أكثر، معناها رسالة من الفني وصلت
+                    // إذا السيرفر فيه رسائل أكثر أو علامات قراءة مختلفة
                     if (dbChat.length > localChat.length) {
                         let lastMsg = dbChat[dbChat.length - 1];
                         if (lastMsg.sender === 'tech') playMessagePing();
                         activeDevice.chat = dbChat;
                         chatChanged = true;
-                    } 
-                    // إذا كان نفس العدد، نتأكد من علامات القراءة (✓✓)
-                    else if (dbChat.length === localChat.length) {
+                    } else if (dbChat.length === localChat.length) {
                         for (let i = 0; i < localChat.length; i++) {
                             if (dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) {
                                 localChat[i].isRead = dbChat[i].isRead;
@@ -484,6 +482,7 @@
             document.getElementById('resCost').innerText = (d.cost || '0') + ' ' + currentCurrency; document.getElementById('resStatus').innerText = d.status;
 
             let extraBox = document.getElementById('extraNoticeBox');
+            // صندوق الموافقة أو الرفض للعميل
             if(d.status && d.status.includes('بانتظار موافقة')) {
                 extraBox.style.display = 'block';
                 document.getElementById('extraNoticeText').innerText = d.new_fault ? `${d.new_fault} (${d.cost} ${currentCurrency})` : `${d.cost} ${currentCurrency}`;
@@ -547,16 +546,8 @@
                 
                 let changed = false; 
                 let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-                let newChat = data.chat.map((m, index) => { 
-                    if(m.sender === 'tech' && !m.isRead) { 
-                        m.isRead = true; 
-                        m.readTime = currentTime; 
-                        changed = true; 
-                        if(activeDevice.chat[index]) {
-                            activeDevice.chat[index].isRead = true;
-                            activeDevice.chat[index].readTime = currentTime;
-                        }
-                    } 
+                let newChat = data.chat.map(m => { 
+                    if(m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; } 
                     return m; 
                 });
                 
@@ -566,6 +557,9 @@
             } catch(e) {}
         }
 
+        // ==============================================
+        // الإرسال النظيف بدون أخطاء ترتيب
+        // ==============================================
         async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
@@ -576,19 +570,28 @@
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // تحديث محلي
+            // تحديث الشاشة فوراً
             activeDevice.chat = activeDevice.chat || [];
             activeDevice.chat.push(newMsg);
             renderChat(activeDevice.chat);
             setTimeout(scrollToBottomChat, 50);
 
-            // الإرسال والرفع الآمن مباشرة بدون طابور أو ترتيب معقد
+            // الإرسال المباشر للسيرفر مع حماية من الأخطاء الصامتة
             try {
-                let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
+                let { data, error } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
+                if (error) throw error;
+                
                 let dbChat = data.chat || [];
-                dbChat.push(newMsg);
-                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-            } catch(e) { console.error("Save error", e); }
+                if(!dbChat.find(x => x.id === msgId)) {
+                    dbChat.push(newMsg);
+                    // رفع بدون ترتيب معقد لضمان عدم حدوث Crash
+                    let { error: updateErr } = await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
+                    if (updateErr) throw updateErr;
+                }
+            } catch(e) {
+                console.error("Save Error", e);
+                alert("حدث خطأ أثناء حفظ الرسالة. يرجى التأكد من اتصال الإنترنت.");
+            }
         }
 
         async function toggleVoiceRecording() {
@@ -612,6 +615,7 @@
         }
 
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
+
         function startCallTimer() {
             callSeconds = 0; if (callTimerInterval) clearInterval(callTimerInterval);
             let timerEl = document.getElementById('callTimerDisplay');
