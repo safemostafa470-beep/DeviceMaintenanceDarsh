@@ -2,7 +2,6 @@
 <html lang="ar" dir="rtl" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
-    <!-- إعداد الـ Viewport ليتجاوب بشكل ممتاز مع الكيبورد في الموبايل -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>لوحة تحكم الفني الاحترافية - الهوارى VIP</title>
     
@@ -88,7 +87,6 @@
         .filter-item label { font-size: 0.85rem; color: var(--text-sub); font-weight: 800; }
         .filter-item input, .filter-item select { padding: 10px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; outline: none; font-size: 16px; font-weight: 700; }
 
-        /* الشات الواضح للموبايل وتجاوب لوحة المفاتيح */
         .chat-container-card { background: #0b1120; border: 2px solid var(--primary); border-radius: 20px; padding: 14px; margin-top: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); transition: all 0.3s ease; }
         .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--glass-border); padding-bottom: 12px; }
         .messenger-call-btn { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; box-shadow: 0 4px 15px rgba(16,185,129,0.4); animation: pulse-green 2s infinite; }
@@ -102,7 +100,6 @@
         
         .chat-img-thumb { max-width: 200px; max-height: 200px; border-radius: 12px; margin-top: 6px; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
         
-        /* التعديل الجذري لمنع خروج الأزرار عن الشاشة */
         .chat-input-row { display: flex; gap: 6px; align-items: center; width: 100%; }
         .chat-input-row input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; background: #1e293b; border: 2px solid var(--glass-border); color: #fff; font-size: 15px; font-weight: 700; outline: none; transition: 0.2s; }
         .chat-input-row input:focus { border-color: var(--primary); }
@@ -133,7 +130,6 @@
         .vip-modal-msg { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 24px; line-height: 1.6; font-weight: 700; }
         .vip-modal-btn { background: var(--accent-gradient); color: #000; border: none; padding: 12px 35px; border-radius: 14px; font-weight: 900; font-size: 1.05rem; cursor: pointer; }
 
-        /* ستايل الطباعة القوي والمعزول */
         @media print {
             body > *:not(#printAreaWrapper) { display: none !important; }
             #printAreaWrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
@@ -143,7 +139,6 @@
 </head>
 <body>
 
-    <!-- حاوية الطباعة المعزولة -->
     <div id="printAreaWrapper" style="display:none; background:#fff; color:#000; padding:20px; width:100%; min-height:100vh;"></div>
 
     <div id="vipModal" class="vip-modal-overlay">
@@ -330,9 +325,30 @@
         let audioCtx = null;
         let ringInterval = null;
 
-        // ==============================================
-        // حل مشكلة الكيبورد المتقدم للموبايل (لوحة التحكم)
-        // ==============================================
+        // --- نظام طابور الرسائل (Message Queue) السريع ---
+        let messageQueue = [];
+        let isProcessingQueue = false;
+
+        async function processMessageQueue() {
+            if (isProcessingQueue || messageQueue.length === 0 || !activeChatId) return;
+            isProcessingQueue = true;
+
+            while (messageQueue.length > 0) {
+                let msg = messageQueue[0];
+                try {
+                    let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
+                    let dbChat = (data && data.chat) ? [...data.chat] : [];
+                    dbChat.push(msg);
+                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
+                    messageQueue.shift(); // يحذف الرسالة من الطابور بعد نجاح الإرسال
+                } catch(e) {
+                    console.error("Queue error:", e);
+                    break;
+                }
+            }
+            isProcessingQueue = false;
+        }
+
         const chatInput = document.getElementById('chatInput');
         const chatContainerWrapper = document.getElementById('chatBoxContainer');
 
@@ -346,15 +362,10 @@
             }, 300);
         }
 
-        if (chatInput) {
-            chatInput.addEventListener('focus', adjustForKeyboard);
-        }
-
+        if (chatInput) chatInput.addEventListener('focus', adjustForKeyboard);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
-                if (document.activeElement === chatInput) {
-                    adjustForKeyboard();
-                }
+                if (document.activeElement === chatInput) adjustForKeyboard();
             });
         }
 
@@ -362,7 +373,6 @@
             let box = document.getElementById('chatMsgsDiv');
             if(box) box.scrollTop = box.scrollHeight;
         }
-        // ==============================================
 
         function formatSimpleDate(isoString) {
             if(!isoString) return '-';
@@ -381,7 +391,6 @@
         }
         function closeVipModal() { document.getElementById('vipModal').style.display = 'none'; }
 
-        // الأصوات والتنبيهات
         function playTone(freq1, freq2, duration) {
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -423,9 +432,6 @@
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').style.display = 'flex'; }
         function closeLightbox() { document.getElementById('lightboxModal').style.display = 'none'; }
 
-        // ==============================================
-        // نظام حفظ الحالة (Refresh State) عبر الـ URL
-        // ==============================================
         function updateURLState(skipHistory = false) {
             const newUrl = new URL(window.location);
             newUrl.searchParams.set('tab', currentTab);
@@ -457,7 +463,6 @@
             await fetchDevicesInitial();
             setupRealtimeListener();
 
-            // استعادة المكان لو عملنا Refresh
             let initTab = urlParams.get('tab') || 'add';
             let initChat = urlParams.get('chat');
             
@@ -470,9 +475,6 @@
             if(data) { devices = data; refreshActiveView(); }
         }
 
-        // ==============================================
-        // نظام المزامنة اللحظية (Realtime) لضمان عدم مسح الرسائل
-        // ==============================================
         function setupRealtimeListener() {
             if (realtimeSubscription) _supabase.removeChannel(realtimeSubscription);
             
@@ -489,7 +491,6 @@
                             let oldData = devices[idx];
                             devices[idx] = updated;
                             
-                            // تنبيه لو رسالة جديدة من العميل
                             if (updated.chat && updated.chat.length > (oldData.chat || []).length) {
                                 let lastMsg = updated.chat[updated.chat.length - 1];
                                 if (lastMsg.sender === 'client') {
@@ -644,9 +645,6 @@
             } else { showVipModal("خطأ", "تعذر حفظ بيانات الجهاز.", "❌"); }
         }
 
-        // ==============================================
-        // نظام الطباعة السليم والمعزول (بدون تلوين للشاشة)
-        // ==============================================
         function executePrint(htmlContent) {
             let printArea = document.getElementById('printAreaWrapper');
             printArea.innerHTML = htmlContent;
@@ -778,11 +776,6 @@
             window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${text}`, '_blank');
         }
 
-        // ==============================================
-        // الشات اللحظي (Optimistic UI) بدون مسح أثناء الكتابة
-        // ==============================================
-        let isTechSending = false;
-        
         function closeChat(skipHistory = false) { 
             document.getElementById('chatBoxContainer').style.display = 'none'; 
             activeChatId = null; 
@@ -853,29 +846,25 @@
             }
         }
 
-        async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
+        function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
-            if(!text || !activeChatId || isTechSending) return;
+            if(!text || !activeChatId) return;
 
             let d = devices.find(x => String(x.id) === String(activeChatId)); if(!d) return;
-            isTechSending = true; 
             
             if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); }
 
             let newMsg = { sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
             let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
+            d.chat = localChat;
             renderChatMsgs(localChat); 
+            setTimeout(scrollToBottomChat, 50);
             
-            try {
-                let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
-                let dbChat = (data && data.chat) ? [...data.chat] : [];
-                dbChat.push(newMsg);
-                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeChatId);
-                d.chat = dbChat;
-            } catch(e) { console.error(e); }
-            finally { isTechSending = false; }
+            // الدفع في الطابور لمعالجة الإرسال بدون توقيفك عن الكتابة
+            messageQueue.push(newMsg);
+            processMessageQueue();
         }
 
         async function toggleVoiceRecording() {
@@ -894,9 +883,6 @@
             } else { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); isRecording = false; btn.classList.remove('recording'); }
         }
 
-        // ==============================================
-        // نظام المكالمات الحية
-        // ==============================================
         function sanitizePeerId(id) { return encodeURIComponent((id || '').toString().trim()).replace(/%/g, '_'); }
         function startCallTimer() {
             callSeconds = 0; if (callTimerInterval) clearInterval(callTimerInterval);
@@ -928,7 +914,16 @@
                 document.getElementById('callScreen').classList.add('active'); document.getElementById('callTargetName').innerText = d.customer_name; document.getElementById('btnAnswerCall').style.display = 'none'; document.getElementById('callStatusText').innerText = 'جاري الاتصال بالعميل...';
                 startOutgoingRingback();
                 let call = myPeer.call('alhawary_client_' + sanitizePeerId(d.tracking_number), localStream); currentCall = call;
-                call.on('stream', remoteStream => { stopCallRingtone(); document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); startCallTimer(); });
+                call.on('stream', remoteStream => { 
+                    stopCallRingtone(); document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
+                    let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
+                    
+                    // السحر هنا لإغلاق المكالمة للطرفين
+                    remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
+                    remoteStream.oninactive = endCurrentCall;
+                    
+                    startCallTimer(); 
+                });
                 call.on('close', endCurrentCall); call.on('error', endCurrentCall);
             } catch(e) { showVipModal("تنبيه المايكروفون", "يرجى منح صلاحية المايكروفون للاتصال.", "🎙️"); endCurrentCall(); }
         }
@@ -937,7 +932,16 @@
             stopCallRingtone(); document.getElementById('btnAnswerCall').style.display = 'none';
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); currentCall.answer(localStream);
-                currentCall.on('stream', remoteStream => { document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); startCallTimer(); });
+                currentCall.on('stream', remoteStream => { 
+                    document.getElementById('callStatusText').innerText = 'المكالمة متصلة 🟢'; 
+                    let audio = document.getElementById('remoteAudio'); audio.srcObject = remoteStream; audio.play().catch(e=>{}); 
+                    
+                    // السحر هنا لإغلاق المكالمة للطرفين
+                    remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
+                    remoteStream.oninactive = endCurrentCall;
+                    
+                    startCallTimer(); 
+                });
                 currentCall.on('close', endCurrentCall);
             } catch(e) { showVipModal("تنبيه", "يرجى السماح بالمايك للرد", "🎙️"); endCurrentCall(); }
         }
@@ -948,8 +952,16 @@
         }
 
         function endCurrentCall() {
-            stopCallRingtone(); stopCallTimer(); if(currentCall) currentCall.close(); if(localStream) localStream.getTracks().forEach(t => t.stop());
-            document.getElementById('callScreen').classList.remove('active'); document.getElementById('remoteAudio').srcObject = null;
+            stopCallRingtone(); stopCallTimer(); if(currentCall) { currentCall.close(); currentCall = null; }
+            
+            // وقف بث المايكروفون بشكل قطعي لتنبيه الطرف الآخر
+            if(localStream) { 
+                localStream.getTracks().forEach(t => t.stop()); 
+                localStream = null; 
+            }
+            
+            document.getElementById('callScreen').classList.remove('active'); 
+            let audio = document.getElementById('remoteAudio'); if(audio) audio.srcObject = null;
             isMuted = false; let btn = document.getElementById('btnMuteCall'); if (btn) { btn.classList.remove('muted'); btn.innerText = '🎤'; }
         }
 

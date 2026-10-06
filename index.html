@@ -2,7 +2,6 @@
 <html lang="ar" dir="rtl" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
-    <!-- إعداد الـ Viewport ليتجاوب بشكل ممتاز مع الكيبورد في الموبايل -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title id="docTitle">تتبع حالة الصيانة - نظام العملاء VIP</title>
     
@@ -76,7 +75,6 @@
         .approve-btn, .reject-btn { color: white; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 900; cursor: pointer; flex: 1; font-size: 1.05rem; }
         .approve-btn { background: #10b981; } .reject-btn { background: #ef4444; }
 
-        /* الشات الواضح للعميل وتجاوب الموبايل */
         .chat-container { margin-top: 26px; background: #020617; border: 2px solid var(--primary); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; height: 60vh; min-height: 350px; max-height: 500px; box-shadow: inset 0 0 25px rgba(0,0,0,0.6); transition: all 0.3s ease; }
         .chat-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--glass-border); padding-bottom: 12px; }
         .chat-title-info span:first-child { font-size: 1.05rem; color: var(--primary); font-weight: 900; }
@@ -92,7 +90,6 @@
         
         .chat-img-thumb { max-width: 220px; max-height: 220px; border-radius: 12px; margin-top: 8px; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
         
-        /* التعديل الجذري لمنع خروج الأزرار عن الشاشة */
         .chat-input-row { display: flex; gap: 6px; align-items: center; width: 100%; }
         .chat-input-row input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; background: #0f172a; border: 2px solid var(--glass-border); color: #fff; font-size: 15px; font-weight: 800; outline: none; transition: 0.2s; }
         .chat-input-row input:focus { border-color: var(--primary); }
@@ -122,7 +119,6 @@
         .footer-link { text-align: center; margin-top: 30px; }
         .footer-link a { color: var(--text-sub); text-decoration: none; font-size: 1rem; font-weight: 800; }
 
-        /* تنسيقات الطباعة */
         @media print {
             body { background: #fff; color: #000; }
             .announcement-bar, .top-settings-bar, .search-box, .chat-container, h2, .footer-link, .print-btn, .notif-banner { display: none !important; }
@@ -184,7 +180,6 @@
                 <button id="btnSearch" class="primary-btn" onpointerdown="event.preventDefault(); searchDevice()" data-i18n="searchBtn">بحث</button>
             </div>
 
-            <!-- كارت التسليم بنجاح -->
             <div id="deliveredCard" class="status-special-card status-delivered-card">
                 <div style="font-size: 4rem; margin-bottom: 15px;">🎉</div>
                 <h3 id="delivTitle" style="color: #34d399; font-size: 1.6rem; margin-bottom: 10px; font-weight: 900;" data-i18n="delivTitle">تم تسليم جهازك بنجاح!</h3>
@@ -201,7 +196,6 @@
                 <button class="print-btn" onclick="window.print()">🖨️ طباعة الفاتورة</button>
             </div>
 
-            <!-- كارت المرتجع -->
             <div id="returnedCard" class="status-special-card status-returned-card">
                 <div style="font-size: 4rem; margin-bottom: 15px;">🔄</div>
                 <h3 id="retTitle" style="color: #ef4444; font-size: 1.6rem; margin-bottom: 10px; font-weight: 900;" data-i18n="retTitle">تم استرجاع الجهاز</h3>
@@ -214,7 +208,6 @@
                 <button class="print-btn" onclick="window.print()" style="margin-top: 15px;">🖨️ طباعة التقرير</button>
             </div>
 
-            <!-- شاشة التتبع والدردشة -->
             <div id="resultSection" class="result-section">
                 <div class="info-row"><span data-i18n="lblTrack">رقم التتبع:</span> <span id="resTrack" style="color:var(--primary); font-family:monospace; font-size:1.1rem;">-</span></div>
                 <div class="info-row"><span data-i18n="lblName">اسم العميل:</span> <span id="resName">-</span></div>
@@ -302,9 +295,30 @@
         let mediaRecorder = null; let audioChunks = []; let isRecording = false;
         let audioCtx = null; let ringInterval = null;
 
-        // ==============================================
-        // حل مشكلة الكيبورد المتقدم للموبايل
-        // ==============================================
+        // --- نظام طابور الرسائل (Message Queue) السريع ---
+        let messageQueue = [];
+        let isProcessingQueue = false;
+
+        async function processMessageQueue() {
+            if (isProcessingQueue || messageQueue.length === 0 || !activeDevice) return;
+            isProcessingQueue = true;
+
+            while (messageQueue.length > 0) {
+                let msg = messageQueue[0];
+                try {
+                    let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
+                    let dbChat = (data && data.chat) ? [...data.chat] : [];
+                    dbChat.push(msg);
+                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
+                    messageQueue.shift(); // يحذف الرسالة من الطابور فقط بعد نجاح الإرسال
+                } catch(e) {
+                    console.error("Queue error:", e);
+                    break; // يوقف المعالجة مؤقتاً ليعيد المحاولة
+                }
+            }
+            isProcessingQueue = false;
+        }
+
         const chatInput = document.getElementById('clientChatInput');
         const chatContainerWrapper = document.getElementById('chatContainerWrapper');
 
@@ -318,15 +332,10 @@
             }, 300);
         }
 
-        if (chatInput) {
-            chatInput.addEventListener('focus', adjustForKeyboard);
-        }
-
+        if (chatInput) chatInput.addEventListener('focus', adjustForKeyboard);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
-                if (document.activeElement === chatInput) {
-                    adjustForKeyboard();
-                }
+                if (document.activeElement === chatInput) adjustForKeyboard();
             });
         }
 
@@ -334,7 +343,6 @@
             let container = document.getElementById('clientChatMsgs');
             if(container) container.scrollTop = container.scrollHeight;
         }
-        // ==============================================
 
         function formatSimpleDate(isoString) {
             if(!isoString) return '-';
@@ -344,6 +352,7 @@
             let month = String(d.getMonth() + 1).padStart(2, '0'); let day = String(d.getDate()).padStart(2, '0');
             return `${ampm}-${hours}:${mins} &nbsp;&nbsp; ${year}-${month}-${day}`;
         }
+        
         function playTone(freq1, freq2, duration) {
             try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume();
                 let osc1 = audioCtx.createOscillator(); let osc2 = audioCtx.createOscillator(); let gain = audioCtx.createGain();
@@ -355,6 +364,7 @@
         function startIncomingRingtone() { stopCallRingtone(); ringInterval = setInterval(() => { playTone(440, 480, 1.5); if (navigator.vibrate) navigator.vibrate([400, 300, 400]); }, 3000); playTone(440, 480, 1.5); }
         function startOutgoingRingback() { stopCallRingtone(); ringInterval = setInterval(() => { playTone(400, 450, 1.2); }, 3000); playTone(400, 450, 1.2); }
         function stopCallRingtone() { if (ringInterval) clearInterval(ringInterval); ringInterval = null; }
+        
         function checkNotificationPermission() { if ("Notification" in window && Notification.permission === "default") document.getElementById('notifBanner').style.display = 'flex'; }
         function enableNotifications() { if ("Notification" in window) Notification.requestPermission().then(p => { document.getElementById('notifBanner').style.display = 'none'; if (p === "granted") new Notification("الهوارى VIP", { body: "تم التفعيل بنجاح!" }); }); }
         function showDesktopNotification(title, body) { if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3067/3067443.png" }); }
@@ -587,34 +597,24 @@
             }
         }
 
-        let isClientSending = false;
-
-        async function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
+        function sendClientMsg(voiceBase64 = null, imageBase64 = null) {
             let input = document.getElementById('clientChatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
-            if(!text || !activeDevice || isClientSending) return;
+            if(!text || !activeDevice) return;
             
-            isClientSending = true; 
             if(!voiceBase64 && !imageBase64) { input.value = ''; input.focus(); } 
             
             let newMsg = { sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
+            // تحديث الشاشة فوراً
             let tempChat = [...(activeDevice.chat || []), newMsg];
+            activeDevice.chat = tempChat;
             renderChat(tempChat);
             setTimeout(scrollToBottomChat, 50);
 
-            try {
-                let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
-                let dbChat = (data && data.chat) ? [...data.chat] : [];
-                dbChat.push(newMsg);
-                
-                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-                activeDevice.chat = dbChat;
-            } catch(e) {
-                console.error("Error sending message:", e);
-            } finally {
-                isClientSending = false;
-            }
+            // دفع الرسالة في الطابور لمعالجتها بهدوء في الخلفية
+            messageQueue.push(newMsg);
+            processMessageQueue();
         }
 
         async function toggleVoiceRecording() {
@@ -695,6 +695,11 @@
                     let audio = document.getElementById('remoteAudio'); 
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
+                    
+                    // السحر هنا لإغلاق المكالمة للطرفين فوراً عند الانقطاع
+                    remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
+                    remoteStream.oninactive = endCurrentCall;
+                    
                     startCallTimer();
                 });
                 call.on('close', endCurrentCall); 
@@ -714,6 +719,11 @@
                     let audio = document.getElementById('remoteAudio'); 
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
+                    
+                    // السحر هنا لإغلاق المكالمة للطرفين فوراً عند الانقطاع
+                    remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
+                    remoteStream.oninactive = endCurrentCall;
+                    
                     startCallTimer();
                 });
                 currentCall.on('close', endCurrentCall);
@@ -734,9 +744,18 @@
 
         function endCurrentCall() {
             stopCallRingtone(); stopCallTimer();
-            if(currentCall) currentCall.close();
-            if(localStream) localStream.getTracks().forEach(t => t.stop());
-            document.getElementById('callScreen').classList.remove('active'); document.getElementById('remoteAudio').srcObject = null;
+            if(currentCall) { currentCall.close(); currentCall = null; }
+            
+            // وقف بث المايكروفون بشكل قطعي لتنبيه الطرف الآخر
+            if(localStream) { 
+                localStream.getTracks().forEach(t => t.stop()); 
+                localStream = null; 
+            }
+            
+            document.getElementById('callScreen').classList.remove('active'); 
+            let audio = document.getElementById('remoteAudio');
+            if(audio) audio.srcObject = null;
+            
             isMuted = false; let btn = document.getElementById('btnMuteCall'); if (btn) { btn.classList.remove('muted'); btn.innerText = '🎤'; }
         }
     </script>
