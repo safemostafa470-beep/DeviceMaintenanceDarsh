@@ -405,7 +405,7 @@
             
             await fetchDevicesInitial();
 
-            // 🌟 تشغيل رادار المزامنة الذكي للفني كل ثانية 🌟
+            // 🌟 الرادار السريع الآمن للفني كل ثانية 🌟
             if(syncInterval) clearInterval(syncInterval);
             syncInterval = setInterval(smartSyncTech, 1000);
 
@@ -441,13 +441,14 @@
                             devices.unshift(dbDev); 
                             needsTableRender = true; 
                         } else {
-                            // 1. تحديث الحالات (رد العميل على العطل)
-                            if(locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time) {
+                            // 1. تحديث الحالات فوراً بناءً على قرار العميل
+                            let stateChanged = locDev.status !== dbDev.status || locDev.cost !== dbDev.cost || locDev.new_fault !== dbDev.new_fault || locDev.expected_time !== dbDev.expected_time;
+                            if(stateChanged) {
                                 locDev.status = dbDev.status; locDev.cost = dbDev.cost; locDev.new_fault = dbDev.new_fault; locDev.expected_time = dbDev.expected_time;
                                 needsTableRender = true;
                             }
 
-                            // 2. الدمج الذكي للشات
+                            // 2. الدمج الذكي للشات (مستحيل يمسح رسالتك)
                             let dbChat = dbDev.chat || [];
                             let locChat = locDev.chat || [];
                             let chatChanged = false;
@@ -469,7 +470,6 @@
                             });
 
                             if (chatChanged) {
-                                locChat.sort((a,b) => parseInt(a.id.split('_')[0]) - parseInt(b.id.split('_')[0]));
                                 locDev.chat = locChat;
                                 needsTableRender = true;
                                 if(activeChatId && String(activeChatId) === String(dbDev.id)) needsChatRender = true;
@@ -485,7 +485,7 @@
                 }
             } catch(e) {}
             
-            isSyncing = false; // فتح القفل
+            isSyncing = false; // فتح القفل للرادار
         }
 
         function refreshActiveView() {
@@ -550,6 +550,7 @@
                     costCell = `<b style="color:#34d399; font-size:1rem;">${d.cost || 0} ${curConf.currency}</b>`;
                     chatBtn = `<button class="action-btn" style="opacity:0.4; cursor:not-allowed;" onclick="showVipModal('تنبيه', 'لا يمكن فتح محادثة لجهاز منتهي.', '⚠️')">💬 شات مغلق</button>`;
                 } else {
+                    // القائمة المنسدلة تتغير تلقائياً حسب الحالة
                     statusCell = `
                         <select onchange="updateDeviceStatus('${d.id}', this.value)" style="background:#0f172a; color:#fff; border:2px solid var(--glass-border); padding:8px 10px; border-radius:12px; font-size:0.85rem; cursor:pointer; font-weight:800;">
                             <option value="جاري الفحص الفني" ${d.status==='جاري الفحص الفني'?'selected':''}>🔍 فحص</option>
@@ -609,7 +610,6 @@
             let f = document.getElementById('fault-' + id).value.trim();
             if(!f) return;
             
-            // تحديث محلي فوراً
             let dev = devices.find(x => x.id === id);
             if(dev) {
                 dev.new_fault = f;
@@ -829,8 +829,11 @@
                 if(!data || !data.chat) return;
                 
                 let changed = false; let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-                let newChat = data.chat.map(m => {
-                    if(m.sender === 'client' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; }
+                let newChat = data.chat.map((m, index) => {
+                    if(m.sender === 'client' && !m.isRead) { 
+                        m.isRead = true; m.readTime = currentTime; changed = true; 
+                        if(d.chat[index]) { d.chat[index].isRead = true; d.chat[index].readTime = currentTime; }
+                    }
                     return m;
                 });
                 if(changed) {
@@ -848,17 +851,16 @@
             
             if(!imageBase64 && !voiceBase64) { input.value = ''; input.focus(); }
 
-            // 🌟 توليد ID قوي
-            let msgId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+            let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 1. تحديث الواجهة فوراً
-            let localChat = d.chat ? [...d.chat] : []; localChat.push(newMsg); 
-            d.chat = localChat;
-            renderChatMsgs(localChat); 
+            // تحديث محلي
+            d.chat = d.chat || [];
+            d.chat.push(newMsg);
+            renderChatMsgs(d.chat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // 2. الرفع المباشر للداتابيز بدون طابور
+            // الرفع الآمن
             try {
                 let { data } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
                 let dbChat = data.chat || [];

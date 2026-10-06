@@ -415,7 +415,7 @@
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            // 🌟 تشغيل المزامنة الذكية السريعة كل ثانية (آمنة جداً)
+            // 🌟 الرادار المائي (كل ثانية واحدة فقط) 🌟
             if(syncInterval) clearInterval(syncInterval);
             syncInterval = setInterval(smartSyncClient, 1000);
         }
@@ -429,8 +429,8 @@
             isSyncing = true; // قفل الرادار لمنع التضارب
             
             try {
-                let { data } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
-                if(data) {
+                let { data, error } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
+                if(data && !error) {
                     let needsUiUpdate = false;
 
                     // 1. تحديث الحالة أو العطل فوراً
@@ -449,29 +449,27 @@
                     let localChat = activeDevice.chat || [];
                     let chatChanged = false;
 
-                    // إضافة الرسائل الجديدة التي وصلت من الفني
-                    dbChat.forEach(dbMsg => {
-                        let existingMsg = localChat.find(locMsg => locMsg.id === dbMsg.id);
-                        if (!existingMsg) {
-                            localChat.push(dbMsg);
-                            chatChanged = true;
-                            if(dbMsg.sender === 'tech') playMessagePing();
-                        } else if (dbMsg.isRead && !existingMsg.isRead) {
-                            // تحديث علامة القراءة فقط
-                            existingMsg.isRead = true;
-                            existingMsg.readTime = dbMsg.readTime;
-                            chatChanged = true;
+                    // إذا السيرفر فيه رسائل أكثر، معناها رسالة من الفني وصلت
+                    if (dbChat.length > localChat.length) {
+                        let lastMsg = dbChat[dbChat.length - 1];
+                        if (lastMsg.sender === 'tech') playMessagePing();
+                        activeDevice.chat = dbChat;
+                        chatChanged = true;
+                    } 
+                    // إذا كان نفس العدد، نتأكد من علامات القراءة (✓✓)
+                    else if (dbChat.length === localChat.length) {
+                        for (let i = 0; i < localChat.length; i++) {
+                            if (dbChat[i] && dbChat[i].isRead !== localChat[i].isRead) {
+                                localChat[i].isRead = dbChat[i].isRead;
+                                localChat[i].readTime = dbChat[i].readTime;
+                                chatChanged = true;
+                            }
                         }
-                    });
-
-                    // ترتيب الرسائل زمنياً بناءً على الـ ID لضمان عدم اللخبطة
-                    if (chatChanged) {
-                        localChat.sort((a, b) => parseInt(a.id.split('_')[0]) - parseInt(b.id.split('_')[0]));
-                        activeDevice.chat = localChat;
-                        renderChat(localChat);
+                        if(chatChanged) activeDevice.chat = [...localChat];
                     }
 
                     if(needsUiUpdate) updateUI(activeDevice);
+                    if(chatChanged) renderChat(activeDevice.chat);
                 }
             } catch(e) {}
             
@@ -486,7 +484,6 @@
             document.getElementById('resCost').innerText = (d.cost || '0') + ' ' + currentCurrency; document.getElementById('resStatus').innerText = d.status;
 
             let extraBox = document.getElementById('extraNoticeBox');
-            // صندوق الموافقة أو الرفض للعميل
             if(d.status && d.status.includes('بانتظار موافقة')) {
                 extraBox.style.display = 'block';
                 document.getElementById('extraNoticeText').innerText = d.new_fault ? `${d.new_fault} (${d.cost} ${currentCurrency})` : `${d.cost} ${currentCurrency}`;
@@ -550,8 +547,16 @@
                 
                 let changed = false; 
                 let currentTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-                let newChat = data.chat.map(m => { 
-                    if(m.sender === 'tech' && !m.isRead) { m.isRead = true; m.readTime = currentTime; changed = true; } 
+                let newChat = data.chat.map((m, index) => { 
+                    if(m.sender === 'tech' && !m.isRead) { 
+                        m.isRead = true; 
+                        m.readTime = currentTime; 
+                        changed = true; 
+                        if(activeDevice.chat[index]) {
+                            activeDevice.chat[index].isRead = true;
+                            activeDevice.chat[index].readTime = currentTime;
+                        }
+                    } 
                     return m; 
                 });
                 
@@ -568,26 +573,22 @@
             
             if(!voiceBase64 && !imageBase64) { input.value = ''; input.focus(); } 
             
-            // 🌟 توليد ID قوي ومميز للرسالة
-            let msgId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+            let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'client', text: text, isVoice: !!voiceBase64, isImage: !!imageBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 1. تحديث شاشة العميل فوراً
+            // تحديث محلي
             activeDevice.chat = activeDevice.chat || [];
             activeDevice.chat.push(newMsg);
             renderChat(activeDevice.chat);
             setTimeout(scrollToBottomChat, 50);
 
-            // 2. الرفع المباشر الذكي للسيرفر بدون مسح أي شيء
+            // الإرسال والرفع الآمن مباشرة بدون طابور أو ترتيب معقد
             try {
                 let { data } = await _supabase.from('devices').select('chat').eq('id', activeDevice.id).single();
                 let dbChat = data.chat || [];
-                if(!dbChat.find(x => x.id === msgId)) {
-                    dbChat.push(newMsg);
-                    dbChat.sort((a, b) => parseInt(a.id.split('_')[0]) - parseInt(b.id.split('_')[0])); // ترتيب
-                    await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
-                }
-            } catch(e) {}
+                dbChat.push(newMsg);
+                await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
+            } catch(e) { console.error("Save error", e); }
         }
 
         async function toggleVoiceRecording() {
@@ -670,7 +671,10 @@
                 });
                 call.on('close', endCurrentCall); 
                 call.on('error', endCurrentCall);
-            } catch(e) { alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون للاتصال.' : 'Please allow microphone access.'); endCurrentCall(); }
+            } catch(e) { 
+                alert(currentLang === 'ar' ? 'يرجى السماح بالمايكروفون للاتصال.' : 'Please allow microphone access.'); 
+                endCurrentCall();
+            }
         }
 
         async function answerIncomingCall() {
@@ -687,7 +691,10 @@
                     startCallTimer();
                 });
                 currentCall.on('close', endCurrentCall);
-            } catch(e) { alert('يرجى السماح بالمايك للرد على المكالمة'); endCurrentCall(); }
+            } catch(e) { 
+                alert('يرجى السماح بالمايك للرد على المكالمة'); 
+                endCurrentCall(); 
+            }
         }
 
         function toggleMute() {
@@ -704,7 +711,8 @@
             if(currentCall) { currentCall.close(); currentCall = null; }
             if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
             document.getElementById('callScreen').classList.remove('active'); 
-            let audio = document.getElementById('remoteAudio'); if(audio) audio.srcObject = null;
+            let audio = document.getElementById('remoteAudio');
+            if(audio) audio.srcObject = null;
             isMuted = false; let btn = document.getElementById('btnMuteCall'); if (btn) { btn.classList.remove('muted'); btn.innerText = '🎤'; }
         }
     </script>
