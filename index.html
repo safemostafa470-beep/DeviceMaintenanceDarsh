@@ -256,6 +256,14 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2eGt4bWt0a3hhd3B0YnJxdHV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDY2MTcsImV4cCI6MjEwNjAyMjYxN30.NkqXPEpMf6VFE3nFQ1V7T5HyjfoxIrT_apKh7S6a_14';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // 🌟 قناة البث اللحظي السريع جداً (Supabase Broadcast) 🌟
+        const sysChannel = _supabase.channel('global-chat-channel');
+        sysChannel.on('broadcast', { event: 'new-msg' }, (payload) => {
+            if (activeDevice && String(activeDevice.id) === String(payload.payload.deviceId)) {
+                smartSyncClientChat(); // اسحب التحديث فوراً وبدون تردد
+            }
+        }).subscribe();
+
         const I18N = {
             ar: {
                 docTitle: "تتبع حالة الصيانة", searchHeader: "استعلام عن حالة الصيانة", searchBtn: "بحث",
@@ -311,6 +319,9 @@
                     dbChat.push(msg);
                     await _supabase.from('devices').update({ chat: dbChat }).eq('id', activeDevice.id);
                     messageQueue.shift(); 
+                    
+                    // 🌟 إرسال نبضة فورية للفني أن هناك رسالة جديدة
+                    sysChannel.send({ type: 'broadcast', event: 'new-msg', payload: { deviceId: activeDevice.id } });
                 } catch(e) {
                     console.error("Queue error:", e);
                     break;
@@ -475,20 +486,16 @@
             resultSection.style.display = 'block';
             initVoicePeer(activeDevice.tracking_number);
             
-            // تفعيل المزامنة الذكية للمحادثة (بديل Realtime)
+            // تفعيل المزامنة الذكية كل ثانية كاحتياطي للـ Broadcast
             if(chatPollInterval) clearInterval(chatPollInterval);
-            chatPollInterval = setInterval(smartSyncClientChat, 2000);
+            chatPollInterval = setInterval(smartSyncClientChat, 1000);
             smartSyncClientChat();
         }
 
-        // ==============================================
-        // المزامنة الذكية (Smart Sync) بديلاً عن الـ Realtime
-        // ==============================================
         async function smartSyncClientChat() {
-            if(!activeDevice || isProcessingQueue) return;
+            if(!activeDevice) return;
             let { data } = await _supabase.from('devices').select('chat, status, expected_time, cost, new_fault').eq('id', activeDevice.id).single();
             if(data) {
-                // تحديث الحالة العامة
                 if(data.status !== activeDevice.status || data.cost !== activeDevice.cost || data.new_fault !== activeDevice.new_fault) {
                     activeDevice.status = data.status; activeDevice.cost = data.cost; activeDevice.new_fault = data.new_fault; activeDevice.expected_time = data.expected_time;
                     if(data.status.includes('تم تسليم') || data.status.includes('مسترجع')) { showDeliveryOrReturnScreen(activeDevice); return; }
@@ -694,7 +701,6 @@
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
                     
-                    // إغلاق المكالمة تلقائياً للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
@@ -718,7 +724,6 @@
                     audio.srcObject = remoteStream; 
                     audio.play().catch(e=> console.log("Audio play error", e));
                     
-                    // إغلاق المكالمة تلقائياً للطرفين
                     remoteStream.getTracks().forEach(t => t.onended = endCurrentCall);
                     remoteStream.oninactive = endCurrentCall;
                     
