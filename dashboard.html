@@ -19,15 +19,8 @@
         .notif-banner { width: 100%; background: var(--primary); color: #000; padding: 10px 16px; font-size: 0.95rem; font-weight: 800; display: none; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .notif-btn { background: #000; color: var(--primary); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 900; cursor: pointer; font-size: 0.85rem; }
         
-        /* شريط الإعلانات */
-        .announcement-bar { width: 100%; height: 45px; background: linear-gradient(90deg, #3b82f6, #6366f1, #a855f7); background-size: 300% 300%; animation: rainbowFlow 8s ease infinite; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); direction: ltr !important; }
-        @keyframes rainbowFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
-        .ticker-content { display: inline-flex; white-space: nowrap; will-change: transform; animation: tickerScroll 25s linear infinite; }
-        .ticker-text { display: inline-block; padding: 0 45px; font-size: 1.1rem; font-weight: 900; color: #ffffff; text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7); direction: rtl; }
-        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-        .top-nav { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 16px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 14px; }
+        /* جعل شريط الفني ثابت تماماً (Sticky) */
+        .top-nav { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 16px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 14px; position: sticky; top: 10px; z-index: 1000; }
         .nav-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .shop-info { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 1.05rem; color: var(--primary); }
         .shop-badge { background: rgba(245, 158, 11, 0.15); color: var(--primary); border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 900; }
@@ -38,6 +31,7 @@
         .nav-btn { background: #0f172a; border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 0.9rem; font-weight: 800; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
         .nav-btn.active { background: var(--accent-gradient); color: #000; border-color: transparent; box-shadow: 0 6px 20px var(--primary-glow); font-weight: 900; }
         .logout-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 8px 16px; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 0.85rem; }
+        
         .card { background: var(--card-surface); border: 2px solid var(--glass-border); padding: 24px 20px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         h2 { font-size: 1.25rem; color: var(--primary); margin-bottom: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px; }
@@ -132,11 +126,6 @@
         <button class="notif-btn" onclick="enableNotifications()">تفعيل الإشعارات</button>
     </div>
 
-    <!-- شريط الإعلانات الجديد المربوط بجدول ads -->
-    <div class="announcement-bar" id="announcementBar" style="display:none;">
-        <div class="ticker-wrap"><div class="ticker-content" id="tickerContent"></div></div>
-    </div>
-
     <div id="callScreen" class="call-screen-overlay">
         <div class="call-avatar">👤</div>
         <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 8px;" id="callTargetName">العميل</div>
@@ -156,6 +145,7 @@
 
     <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="handleImageSelected(this)">
 
+    <!-- الشريط العلوي الثابت للوحة الفني -->
     <div class="top-nav">
         <div class="nav-header-row">
             <div class="shop-info">
@@ -406,18 +396,6 @@
             }
         });
 
-        async function loadLiveAnnouncement() {
-            try {
-                let { data: adsData } = await _supabase.from('ads').select('*');
-                if (adsData && adsData.length > 0) {
-                    let adText = adsData[0].text || adsData[0].message || adsData[0].content || "عروض وخصومات خاصة لعملائنا الكرام!";
-                    let banner = document.getElementById('announcementBar');
-                    banner.style.display = 'flex';
-                    document.getElementById('tickerContent').innerHTML = `<span class="ticker-text">✨ ${adText.trim()} ✨</span>`.repeat(4);
-                }
-            } catch (err) {}
-        }
-
         window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             currentTech = urlParams.get('user') || localStorage.getItem('currentUser');
@@ -428,7 +406,6 @@
             applyCountrySettings(currentCountry);
             checkNotificationPermission();
             initTechVoice(currentTech);
-            loadLiveAnnouncement();
             
             await fetchDevicesInitial();
 
@@ -447,34 +424,39 @@
             if(data) { devices = data; refreshActiveView(); }
         }
 
-        // ==============================================
-        // 🌟 خوارزمية الدمج الذكية (تمنع مسح أي رسالة)
-        // ==============================================
+        // 🌟 خوارزمية الدمج الآمنة للمهندس 🌟
         function mergeChat(localChat, dbChat) {
             let mergedMap = new Map();
-            (localChat || []).forEach(m => mergedMap.set(m.id, m));
+            let missingCounter = 0; 
+            
             (dbChat || []).forEach(m => {
-                if (mergedMap.has(m.id)) {
+                let mId = m.id || ('old_server_' + missingCounter++);
+                m.id = mId;
+                mergedMap.set(mId, m);
+            });
+            
+            (localChat || []).forEach(m => {
+                if (m.id && mergedMap.has(m.id)) {
                     let existing = mergedMap.get(m.id);
-                    if (m.isRead && !existing.isRead) existing.isRead = true;
-                    existing.readTime = m.readTime || existing.readTime;
+                    if (m.isRead) existing.isRead = true;
+                    if (m.readTime) existing.readTime = m.readTime;
                     mergedMap.set(m.id, existing);
-                } else {
+                } else if (m.id) {
                     mergedMap.set(m.id, m);
                 }
             });
+            
             let result = Array.from(mergedMap.values());
-            // الترتيب الآمن للرسائل
             result.sort((a, b) => {
-                let idA = a.id ? String(a.id).split('_')[0] : 0;
-                let idB = b.id ? String(b.id).split('_')[0] : 0;
-                return parseInt(idA) - parseInt(idB);
+                let ta = parseInt(a.id) || 0;
+                let tb = parseInt(b.id) || 0;
+                return ta - tb;
             });
             return result;
         }
 
         // ==============================================
-        // 🌟 رادار الجداول (كل 4 ثواني) لعدم خنق الشبكة
+        // رادار الجداول والشات (متزامن ولا يمسح رسائلك)
         // ==============================================
         let isTableSyncing = false;
         async function startTableSyncLoop() {
@@ -497,10 +479,11 @@
                                     needsRender = true;
                                 }
                                 
+                                let mergedChat = mergeChat(locDev.chat, dbDev.chat);
                                 let dbChatStr = JSON.stringify(dbDev.chat || []);
                                 let locChatStr = JSON.stringify(locDev.chat || []);
-                                if (dbChatStr !== locChatStr) {
-                                    let mergedChat = mergeChat(locDev.chat, dbDev.chat);
+                                
+                                if (JSON.stringify(mergedChat) !== locChatStr) {
                                     if ((dbDev.chat || []).length > (locDev.chat || []).length) {
                                         let lastMsg = dbDev.chat[dbDev.chat.length - 1];
                                         if (lastMsg && lastMsg.sender === 'client') {
@@ -516,15 +499,11 @@
                         if(needsRender) refreshActiveView();
                     }
                 } catch(e) {}
-                
                 await new Promise(res => setTimeout(res, 4000));
             }
             isTableSyncing = false;
         }
 
-        // ==============================================
-        // 🌟 رادار الشات المفتوح (سريع جداً كل ثانية)
-        // ==============================================
         let isChatSyncing = false;
         async function startChatSyncLoop() {
             if(isChatSyncing) return;
@@ -898,11 +877,13 @@
                 });
                 if(changed) {
                     await _supabase.from('devices').update({chat: newChat}).eq('id', chatId);
-                    d.chat = newChat;
                 }
             } catch(e) {}
         }
 
+        // ==============================================
+        // الإرسال السريع جداً والآمن
+        // ==============================================
         async function sendTechMsg(imageBase64 = null, voiceBase64 = null) {
             let input = document.getElementById('chatInput');
             let text = imageBase64 || voiceBase64 || input.value.trim();
@@ -915,13 +896,13 @@
             let msgId = Date.now().toString() + '_' + Math.floor(Math.random()*1000);
             let newMsg = { id: msgId, sender: 'tech', text: text, isImage: !!imageBase64, isVoice: !!voiceBase64, time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}), isRead: false };
             
-            // 1. التحديث المحلي الفوري
+            // تحديث محلي
             d.chat = d.chat || [];
             d.chat.push(newMsg);
             renderChatMsgs(d.chat); 
             setTimeout(scrollToBottomChat, 50);
             
-            // 2. الرفع المباشر بدون تعقيدات
+            // الرفع المباشر بدون ترتيب معرقل
             try {
                 let { data, error } = await _supabase.from('devices').select('chat').eq('id', activeChatId).single();
                 if(error) throw error;
@@ -1006,7 +987,7 @@
                     startCallTimer(); 
                 });
                 currentCall.on('close', endCurrentCall);
-            } catch(e) { showVipModal("تنبيه", "يرجى السماح بالمايك للرد", "🎙️"); endCurrentCall(); }
+            } catch(e) { showVipModal("تنبيه", "يرجى السماح بالمايك للرد", "🎙️️"); endCurrentCall(); }
         }
 
         function toggleMute() {
